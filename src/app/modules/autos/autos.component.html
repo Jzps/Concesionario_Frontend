@@ -1,0 +1,82 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0 fw-bold">Gestión de Autos</h3>
+    
+    <div>
+      <button class="btn btn-primary btn-lg me-2" (click)="comprarAuto()">
+        <i class="fas fa-plus-circle"></i> Comprar Auto
+      </button>
+
+      <button 
+        class="btn btn-secondary btn-lg" 
+        [ngClass]="{'btn-success': mostrandoVendidos, 'btn-secondary': !mostrandoVendidos}" 
+        (click)="alternarVista()"
+      >
+        @if (mostrandoVendidos) {
+            <i class="fas fa-car-side"></i> Autos Disponibles
+        } @else {
+            <i class="fas fa-handshake"></i> Autos Vendidos
+        }
+      </button>
+    </div>
+  </div>
+
+  <div class="input-group mb-4" style="max-width: 350px;">
+    <span class="input-group-text bg-light border-end-0">
+      <i class="fas fa-search"></i>
+    </span>
+    <input
+      type="text"
+      class="form-control border-start-0 ps-0"
+      placeholder="Buscar auto por VIN o Placa"
+      [(ngModel)]="filtro"
+    />
+  </div>
+
+  <h5 class="mb-3 text-muted">
+    {{ mostrandoVendidos ? 'Inventario de Autos Vendidos' : 'Inventario de Autos Disponibles' }}
+  </h5>
+
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle shadow-sm">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th>
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th>Placa</th>
+          <th>VIN</th>
+          <th>Año</th>
+          <th>Color</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let auto of autosMostrados">
+          <td>{{ auto.id }}</td>
+          <td>{{ auto.marca }}</td>
+          <td>{{ auto.modelo }}</td>
+          <td>{{ auto.placa }}</td>
+          <td>{{ auto.vin }}</td>
+          <td>{{ auto.anio }}</td>
+          <td>{{ auto.color }}</td>
+          <td class="text-center">
+            
+            @if (auto.estado === 'DISPONIBLE') {
+                <button class="btn btn-sm btn-success me-2" (click)="venderAuto(auto.id)">
+                    Vender
+                </button>
+                <button class="btn btn-sm btn-info text-white me-2" (click)="editarAuto(auto.id)">
+                    Editar
+                </button>
+            }
+            
+            <button class="btn btn-sm btn-danger" (click)="eliminarAuto(auto.id)">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
