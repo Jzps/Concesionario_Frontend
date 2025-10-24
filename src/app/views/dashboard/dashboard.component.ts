@@ -1,188 +1,109 @@
-import { NgStyle } from '@angular/common';
-import { Component, DestroyRef, DOCUMENT, effect, inject, OnInit, Renderer2, signal, WritableSignal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ChartOptions } from 'chart.js';
-import {
-  AvatarComponent,
-  ButtonDirective,
-  ButtonGroupComponent,
-  CardBodyComponent,
-  CardComponent,
-  CardFooterComponent,
-  CardHeaderComponent,
-  ColComponent,
-  FormCheckLabelDirective,
-  GutterDirective,
-  ProgressComponent,
-  RowComponent,
-  TableDirective
-} from '@coreui/angular';
-import { ChartjsComponent } from '@coreui/angular-chartjs';
-import { IconDirective } from '@coreui/icons-angular';
+import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+// Asegurar que estos módulos estén importados para que el HTML funcione
+import { RouterLink, RouterModule } from '@angular/router';
+import { BadgeModule, ButtonModule, CardModule, GridModule } from '@coreui/angular';
 
-import { WidgetsBrandComponent } from '../widgets/widgets-brand/widgets-brand.component';
-import { WidgetsDropdownComponent } from '../widgets/widgets-dropdown/widgets-dropdown.component';
-import { DashboardChartsData, IChartProps } from './dashboard-charts-data';
-
-interface IUser {
-  name: string;
-  state: string;
-  registered: string;
-  country: string;
-  usage: number;
-  period: string;
-  payment: string;
-  activity: string;
-  avatar: string;
-  status: string;
-  color: string;
+// Definición de la interfaz para las tarjetas de módulo
+interface ModuleCard {
+  title: string;
+  description: string;
+  icon: string; // Clase de Font Awesome (ej: 'fas fa-car-side')
+  link: string;
+  color: string; // Color de Bootstrap: primary, info, warning, success, danger, dark, purple, etc.
+  apiEndpoints: string[];
 }
 
 @Component({
-  templateUrl: 'dashboard.component.html',
-  styleUrls: ['dashboard.component.scss'],
-  imports: [WidgetsDropdownComponent, CardComponent, CardBodyComponent, RowComponent, ColComponent, ButtonDirective, IconDirective, ReactiveFormsModule, ButtonGroupComponent, FormCheckLabelDirective, ChartjsComponent, NgStyle, CardFooterComponent, GutterDirective, ProgressComponent, WidgetsBrandComponent, CardHeaderComponent, TableDirective, AvatarComponent]
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [CommonModule, CardModule, GridModule, ButtonModule, BadgeModule, RouterLink, RouterModule], 
+  templateUrl: './dashboard.component.html',
+  styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
 
-  readonly #destroyRef: DestroyRef = inject(DestroyRef);
-  readonly #document: Document = inject(DOCUMENT);
-  readonly #renderer: Renderer2 = inject(Renderer2);
-  readonly #chartsData: DashboardChartsData = inject(DashboardChartsData);
+  moduleCards: ModuleCard[] = [];
 
-  public users: IUser[] = [
-    {
-      name: 'Yiorgos Avraamu',
-      state: 'New',
-      registered: 'Jan 1, 2021',
-      country: 'Us',
-      usage: 50,
-      period: 'Jun 11, 2021 - Jul 10, 2021',
-      payment: 'Mastercard',
-      activity: '10 sec ago',
-      avatar: './assets/images/avatars/1.jpg',
-      status: 'success',
-      color: 'success'
-    },
-    {
-      name: 'Avram Tarasios',
-      state: 'Recurring ',
-      registered: 'Jan 1, 2021',
-      country: 'Br',
-      usage: 10,
-      period: 'Jun 11, 2021 - Jul 10, 2021',
-      payment: 'Visa',
-      activity: '5 minutes ago',
-      avatar: './assets/images/avatars/2.jpg',
-      status: 'danger',
-      color: 'info'
-    },
-    {
-      name: 'Quintin Ed',
-      state: 'New',
-      registered: 'Jan 1, 2021',
-      country: 'In',
-      usage: 74,
-      period: 'Jun 11, 2021 - Jul 10, 2021',
-      payment: 'Stripe',
-      activity: '1 hour ago',
-      avatar: './assets/images/avatars/3.jpg',
-      status: 'warning',
-      color: 'warning'
-    },
-    {
-      name: 'Enéas Kwadwo',
-      state: 'Sleep',
-      registered: 'Jan 1, 2021',
-      country: 'Fr',
-      usage: 98,
-      period: 'Jun 11, 2021 - Jul 10, 2021',
-      payment: 'Paypal',
-      activity: 'Last month',
-      avatar: './assets/images/avatars/4.jpg',
-      status: 'secondary',
-      color: 'danger'
-    },
-    {
-      name: 'Agapetus Tadeáš',
-      state: 'New',
-      registered: 'Jan 1, 2021',
-      country: 'Es',
-      usage: 22,
-      period: 'Jun 11, 2021 - Jul 10, 2021',
-      payment: 'ApplePay',
-      activity: 'Last week',
-      avatar: './assets/images/avatars/5.jpg',
-      status: 'success',
-      color: 'primary'
-    },
-    {
-      name: 'Friderik Dávid',
-      state: 'New',
-      registered: 'Jan 1, 2021',
-      country: 'Pl',
-      usage: 43,
-      period: 'Jun 11, 2021 - Jul 10, 2021',
-      payment: 'Amex',
-      activity: 'Yesterday',
-      avatar: './assets/images/avatars/6.jpg',
-      status: 'info',
-      color: 'dark'
-    }
-  ];
-
-  public mainChart: IChartProps = { type: 'line' };
-  public mainChartRef: WritableSignal<any> = signal(undefined);
-  #mainChartRefEffect = effect(() => {
-    if (this.mainChartRef()) {
-      this.setChartStyles();
-    }
-  });
-  public chart: Array<IChartProps> = [];
-  public trafficRadioGroup = new FormGroup({
-    trafficRadio: new FormControl('Month')
-  });
+  constructor() {}
 
   ngOnInit(): void {
-    this.initCharts();
-    this.updateChartOnColorModeChange();
+    this.initializeModuleCards();
   }
 
-  initCharts(): void {
-    this.mainChartRef()?.stop();
-    this.mainChart = this.#chartsData.mainChart;
+  // Inicializa la data del dashboard con colores e íconos temáticos variados
+  initializeModuleCards(): void {
+    this.moduleCards = [
+      {
+        title: 'Gestión de Autos',
+        description: 'Administración completa del inventario (Nuevos, Usados, Eléctricos). Incluye registro, venta y listado de autos.',
+        icon: 'fas fa-car-side', // 🚗 Carro
+        link: '/autos',
+        color: 'primary', // Azul
+        apiEndpoints: ['POST /autos', 'GET /autos', 'PUT /autos/{id}', 'DELETE /autos/{id}']
+      },
+      {
+        title: 'Clientes',
+        description: 'Módulo CRUD para la gestión de la cartera de clientes. Fundamental para registrar compradores y facturación.',
+        icon: 'fas fa-user-friends', // 👤 Personas
+        link: '/clientes',
+        color: 'info', // Cian/Claro (similar al sidebar)
+        apiEndpoints: ['POST /clientes', 'GET /clientes', 'PUT /clientes/{id}', 'DELETE /clientes/{id}']
+      },
+      {
+        title: 'Empleados',
+        description: 'Control de personal (Vendedores y Técnicos). Permite asignar roles y especialidades para los mantenimientos.',
+        icon: 'fas fa-id-badge', // 👨‍💼 Empleado
+        link: '/empleados',
+        color: 'warning', // Amarillo
+        apiEndpoints: ['GET /empleados', 'POST /empleados/vendedores', 'POST /empleados/tecnicos']
+      },
+      {
+        title: 'Facturas y Ventas',
+        description: 'Seguimiento de las facturas generadas automáticamente tras cada venta. Reportes financieros y listados históricos.',
+        icon: 'fas fa-file-invoice-dollar', // 🧾 Factura
+        link: '/facturas',
+        color: 'success', // Verde
+        apiEndpoints: ['GET /facturas', 'POST /facturas (auto-generada)', 'DELETE /facturas/{id}']
+      },
+      {
+        title: 'Mantenimientos',
+        description: 'Registro de servicios de reparación, asignación de técnicos, y detalle de costos. Control de estado (Iniciado, Progreso, Finalizado).',
+        icon: 'fas fa-tools', // 🛠️ Herramientas
+        link: '/mantenimientos',
+        color: 'danger', // Rojo
+        apiEndpoints: ['POST /mantenimientos', 'GET /mantenimientos', 'PUT /mantenimientos/{id}']
+      },
+      {
+        title: 'Concesionario (Sede)',
+        description: 'Administración de la información principal de la sede. Permite actualizar los datos de contacto y detalles de la empresa.',
+        icon: 'fas fa-building', // 🏢 Edificio
+        link: '/concesionario',
+        color: 'secondary', // Gris
+        apiEndpoints: ['GET /concesionario', 'PUT /concesionario']
+      },
+      {
+        title: 'Administración del Sistema',
+        description: 'Módulo de seguridad y acceso: Login para validar credenciales y gestión de usuarios administradores del sistema (Módulo /admin).',
+        icon: 'fas fa-user-shield', // 🔒 Admin
+        link: '/admin',
+        color: 'dark', // Negro
+        apiEndpoints: ['POST /admin/login', 'POST /admin/register', 'DELETE /admin/{id}']
+      },
+      {
+        title: 'Documentación (Swagger UI)',
+        description: 'Acceso directo a la documentación interactiva de la API, esencial para pruebas y desarrollo. ¡Ver todas las rutas y modelos!',
+        icon: 'fas fa-book', // 📚 Documentación
+        link: '/swagger-ui',
+        color: 'purple', // Morado
+        apiEndpoints: ['API Docs Link']
+      }
+    ];
   }
 
-  setTrafficPeriod(value: string): void {
-    this.trafficRadioGroup.setValue({ trafficRadio: value });
-    this.#chartsData.initMainChart(value);
-    this.initCharts();
-  }
-
-  handleChartRef($chartRef: any) {
-    if ($chartRef) {
-      this.mainChartRef.set($chartRef);
-    }
-  }
-
-  updateChartOnColorModeChange() {
-    const unListen = this.#renderer.listen(this.#document.documentElement, 'ColorSchemeChange', () => {
-      this.setChartStyles();
-    });
-
-    this.#destroyRef.onDestroy(() => {
-      unListen();
-    });
-  }
-
-  setChartStyles() {
-    if (this.mainChartRef()) {
-      setTimeout(() => {
-        const options: ChartOptions = { ...this.mainChart.options };
-        const scales = this.#chartsData.getScales();
-        this.mainChartRef().options.scales = { ...options.scales, ...scales };
-        this.mainChartRef().update();
-      });
-    }
+  // Función para redirigir a Swagger UI
+  goToSwagger(): void {
+    // Abre la documentación de FastAPI en una nueva pestaña (ajusta el puerto si es necesario)
+    window.open('http://localhost:8000/docs', '_blank'); 
   }
 }
