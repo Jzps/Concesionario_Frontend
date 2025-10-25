@@ -1,65 +1,132 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 
-// Nueva Interfaz de Datos
 interface Concesionario {
   id: string;
   nombre: string;
   direccion: string;
   telefono: string;
-  email: string;
-  ciudad: string;
 }
 
 @Component({
   selector: 'app-concesionarios',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './concesionarios.component.html',
-  // Reutilizamos el estilo de tabla/contenedor
-  styleUrls: ['../clientes/clientes.component.scss'] 
+  styleUrls: ['../clientes/clientes.component.scss'],
 })
-export class ConcesionariosComponent {
+export class ConcesionariosComponent implements OnInit {
   filtro = '';
+  concesionarioForm!: FormGroup;
+  messageModalText: string = '';
+  concesionarioIdToDelete: string | null = null;
 
-  // Datos de prueba (Simulando la respuesta del GET /concesionario - Listar)
   concesionarios: Concesionario[] = [
     {
-      id: 'C1',
+      id: '1',
       nombre: 'AutoCentro Principal',
       direccion: 'Av. Libertador #10-50',
       telefono: '6015551234',
-      email: 'contacto@autocentro.com',
-      ciudad: 'Bogotá',
     },
     {
-      id: 'C2',
+      id: '2',
       nombre: 'Ruedas del Sur',
       direccion: 'Calle 25 #5-10',
       telefono: '6045555678',
-      email: 'sur@ruedas.com',
-      ciudad: 'Medellín',
     },
   ];
 
-  // Funciones Mapeadas a los Métodos HTTP
-  buscar() { // Mapea a GET /concesionario/{concesionario_id}
-    console.log('Buscando concesionario:', this.filtro);
+  filteredConcesionarios: Concesionario[] = [];
+
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.concesionarioForm = this.fb.group({
+      nombre: ['', [Validators.required]],
+      direccion: ['', [Validators.required]],
+      telefono: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+    });
+
+    this.filteredConcesionarios = [...this.concesionarios];
   }
 
-  crearConcesionario() { // Mapea a POST /concesionario
-    alert('Función crear concesionario');
+  filtrarConcesionarios() {
+    const term = this.filtro.toLowerCase().trim();
+    this.filteredConcesionarios = !term
+      ? [...this.concesionarios]
+      : this.concesionarios.filter(
+          (c) =>
+            c.nombre.toLowerCase().includes(term) ||
+            c.direccion.toLowerCase().includes(term)
+        );
   }
 
-  editarConcesionario(id: string) { // Mapea a PUT /concesionario/{concesionario_id}
-    alert(`Editar concesionario con ID: ${id}`);
+  private getNextId(): string {
+    const maxId = this.concesionarios.reduce((max, c) => {
+      const idNum = parseInt(c.id, 10);
+      return isNaN(idNum) ? max : Math.max(max, idNum);
+    }, 0);
+    return (maxId + 1).toString();
   }
 
-  eliminarConcesionario(id: string) { // Mapea a DELETE /concesionario/{concesionario_id}
-    const confirmar = confirm('¿Seguro que deseas eliminar este concesionario?');
-    if (confirmar) {
-      this.concesionarios = this.concesionarios.filter(c => c.id !== id);
+  crearConcesionario() {
+    this.concesionarioForm.reset();
+  }
+
+  guardarConcesionario() {
+    if (this.concesionarioForm.valid) {
+      const nuevoConcesionario: Concesionario = {
+        id: this.getNextId(),
+        ...this.concesionarioForm.value,
+      };
+      this.concesionarios.push(nuevoConcesionario);
+      this.filtrarConcesionarios();
+      this.showMessageModal('Concesionario creado exitosamente.');
+      this.concesionarioForm.reset();
+    } else {
+      this.concesionarioForm.markAllAsTouched();
     }
+  }
+
+  editarConcesionario(id: string) {
+    this.showMessageModal(
+      `Función de edición pendiente para el concesionario con ID: ${id}`
+    );
+  }
+
+  eliminarConcesionario(id: string) {
+    this.concesionarioIdToDelete = id;
+    this.showConfirmModal();
+  }
+
+  confirmarEliminar() {
+    if (this.concesionarioIdToDelete) {
+      this.concesionarios = this.concesionarios.filter(
+        (c) => c.id !== this.concesionarioIdToDelete
+      );
+      this.filtrarConcesionarios();
+      this.showMessageModal(
+        `Concesionario con ID ${this.concesionarioIdToDelete} eliminado.`
+      );
+      this.concesionarioIdToDelete = null;
+    }
+  }
+
+  private showMessageModal(message: string): void {
+    this.messageModalText = message;
+    console.log(`[Message Modal] ${message}`);
+  }
+
+  private showConfirmModal(): void {
+    console.log(
+      `[Confirm Modal] Solicitud de eliminación para ${this.concesionarioIdToDelete}`
+    );
   }
 }

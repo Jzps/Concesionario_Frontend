@@ -1,33 +1,35 @@
 <div class="container mt-4">
-  <!-- Título y botón crear -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3 class="mb-0 fw-bold">Gestión de Administradores</h3>
-    <!-- Mapea al POST /admin/crear Admin -->
-    <button class="btn btn-primary btn-lg" (click)="crearAdmin()">
-      + Crear Administrador 
+    <button
+      class="btn btn-primary btn-lg"
+      data-bs-toggle="modal"
+      data-bs-target="#adminModal"
+      (click)="crearAdmin()"
+    >
+      <i class="fas fa-user-shield me-2"></i>+ Crear Administrador
     </button>
   </div>
 
-  <!-- Barra de búsqueda -->
-  <div class="input-group mb-4" style="max-width: 350px;">
+  <div class="input-group mb-4" style="max-width: 350px">
     <span class="input-group-text bg-light border-end-0">
       <i class="fas fa-search"></i>
     </span>
     <input
       type="text"
       class="form-control border-start-0 ps-0"
-      placeholder="Buscar por Email o Nombre"
+      placeholder="Buscar por Email o Usuario"
       [(ngModel)]="filtro"
+      (input)="filtrarAdmins()"
     />
   </div>
 
-  <!-- Tabla de Administradores (Mapea al GET /admin - Listar) -->
   <div class="table-responsive">
     <table class="table table-striped table-hover align-middle shadow-sm">
       <thead class="table-dark">
         <tr>
           <th>ID</th>
-          <th>Nombre Completo</th>
+          <th>Usuario</th>
           <th>Email</th>
           <th>Rol</th>
           <th>Fecha Creación</th>
@@ -35,21 +37,149 @@
         </tr>
       </thead>
       <tbody>
-        <!-- Iteración corregida a 'admins' -->
-        <tr *ngFor="let admin of admins">
+        <tr *ngFor="let admin of filteredAdmins">
           <td>{{ admin.id }}</td>
-          <td>{{ admin.nombre }} {{ admin.apellido }}</td>
+          <td>{{ admin.username }}</td>
           <td>{{ admin.email }}</td>
           <td>{{ admin.rol }}</td>
-          <td>{{ admin.fechaCreacion | date:'dd/MM/yyyy' }}</td> 
+          <td>{{ admin.fechaCreacion | date : "dd/MM/yyyy" }}</td>
           <td class="text-center">
-            <!-- Solo queda el botón Eliminar -->
-            <button class="btn btn-sm btn-danger" (click)="eliminarAdmin(admin.id)">
+            <button
+              class="btn btn-sm btn-danger"
+              (click)="eliminarAdmin(admin.id)"
+            >
               <i class="fas fa-trash-alt"></i> Eliminar
             </button>
           </td>
         </tr>
+        <tr *ngIf="filteredAdmins.length === 0">
+          <td colspan="6" class="text-center py-4 text-muted">
+            No se encontraron administradores que coincidan con la búsqueda.
+          </td>
+        </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="adminModal"
+  tabindex="-1"
+  aria-labelledby="adminModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="adminModalLabel">
+          <i class="fas fa-user-shield me-2"></i> Crear Nuevo Administrador
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+
+      <form [formGroup]="adminForm" (ngSubmit)="guardarAdmin()">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="username" class="form-label">Nombre de usuario</label>
+            <input
+              type="text"
+              class="form-control"
+              id="username"
+              formControlName="username"
+              placeholder="Ejemplo: juanp_admin"
+            />
+            <div
+              *ngIf="
+                adminForm.get('username')?.invalid &&
+                adminForm.get('username')?.touched
+              "
+              class="text-danger mt-1"
+            >
+              El nombre de usuario es obligatorio (mínimo 4 caracteres).
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label">Contraseña</label>
+            <input
+              type="password"
+              class="form-control"
+              id="password"
+              formControlName="password"
+              placeholder="Contraseña segura"
+            />
+            <div
+              *ngIf="
+                adminForm.get('password')?.invalid &&
+                adminForm.get('password')?.touched
+              "
+              class="text-danger mt-1"
+            >
+              La contraseña es obligatoria (mínimo 6 caracteres).
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="adminForm.invalid"
+          >
+            <i class="fas fa-save me-2"></i>Guardar Administrador
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Mensaje</h5></div>
+      <div class="modal-body">{{ messageModalText }}</div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" data-bs-dismiss="modal">Aceptar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Confirmar Eliminación</h5>
+      </div>
+      <div class="modal-body">
+        ¿Estás seguro de eliminar este administrador?
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button
+          class="btn btn-danger"
+          data-bs-dismiss="modal"
+          (click)="confirmarEliminar()"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
   </div>
 </div>

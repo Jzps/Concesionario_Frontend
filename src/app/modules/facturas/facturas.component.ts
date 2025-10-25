@@ -1,82 +1,172 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 
-// Nueva Interfaz de Datos
 interface Factura {
   id: string;
-  cliente: string;
-  fecha: string; // Usaremos string para simplificar
+  fecha_emision: string;
+  cliente_id: string;
+  empleado_id: string;
+  auto_id: string;
+  precio_carro_base: number;
+  costo_mantenimiento: number;
+  descuento: number;
   total: number;
-  estado: 'PAGADA' | 'PENDIENTE' | 'ANULADA';
+  observaciones: string;
 }
 
 @Component({
   selector: 'app-facturas',
   standalone: true,
-  // Necesitamos CurrencyPipe y DatePipe para formatear los datos en la tabla
-  imports: [CommonModule, FormsModule, DatePipe, CurrencyPipe], 
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    DatePipe,
+    CurrencyPipe,
+  ],
   templateUrl: './facturas.component.html',
-  // Reutilizamos el estilo de tabla/contenedor
-  styleUrls: ['../clientes/clientes.component.scss'] 
+  styleUrls: ['../clientes/clientes.component.scss'],
 })
-export class FacturasComponent {
+export class FacturasComponent implements OnInit {
   filtro = '';
+  facturaForm!: FormGroup;
+  messageModalText: string = '';
+  facturaIdToDelete: string | null = null;
 
-  // Datos de prueba (Simulando la respuesta del GET /facturas - Listar)
   facturas: Factura[] = [
     {
-      id: 'F001',
-      cliente: 'Javier Castro',
-      fecha: '2025-10-10',
-      total: 1500000,
-      estado: 'PAGADA',
+      id: '1',
+      fecha_emision: '2025-10-10',
+      cliente_id: '1',
+      empleado_id: '1',
+      auto_id: '1',
+      precio_carro_base: 1500000,
+      costo_mantenimiento: 100000,
+      descuento: 50000,
+      total: 1550000,
+      observaciones: 'Factura pagada en efectivo.',
     },
     {
-      id: 'F002',
-      cliente: 'Andres Lopez',
-      fecha: '2025-10-15',
+      id: '2',
+      fecha_emision: '2025-10-15',
+      cliente_id: '2',
+      empleado_id: '3',
+      auto_id: '2',
+      precio_carro_base: 800000,
+      costo_mantenimiento: 50000,
+      descuento: 0,
       total: 850000,
-      estado: 'PENDIENTE',
-    },
-    {
-      id: 'F003',
-      cliente: 'Mariana Gutierrez',
-      fecha: '2025-09-28',
-      total: 2100000,
-      estado: 'ANULADA',
+      observaciones: 'Pendiente de pago.',
     },
   ];
 
-  // Funciones Mapeadas a los Métodos HTTP
-  buscar() { // Mapea a GET /facturas/{factura_id}
-    console.log('Buscando factura:', this.filtro);
+  filteredFacturas: Factura[] = [];
+
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.facturaForm = this.fb.group({
+      fecha_emision: ['', Validators.required],
+      cliente_id: ['', Validators.required],
+      empleado_id: ['', Validators.required],
+      auto_id: ['', Validators.required],
+      precio_carro_base: [0, [Validators.required, Validators.min(0)]],
+      costo_mantenimiento: [0, [Validators.required, Validators.min(0)]],
+      descuento: [0, [Validators.required, Validators.min(0)]],
+      total: [{ value: 0, disabled: true }],
+      observaciones: [''],
+    });
+
+    this.filteredFacturas = [...this.facturas];
+
+    this.facturaForm.valueChanges.subscribe(() => this.calcularTotal());
   }
 
-  crearFactura() { // Mapea a POST /facturas
-    alert('Función crear nueva factura');
+  filtrarFacturas() {
+    const term = this.filtro.toLowerCase().trim();
+    this.filteredFacturas = !term
+      ? [...this.facturas]
+      : this.facturas.filter(
+          (f) =>
+            f.id.includes(term) || f.observaciones.toLowerCase().includes(term)
+        );
   }
 
-  // Eliminamos editarFactura ya que no hay PUT
-  
-  eliminarFactura(id: string) { // Mapea a DELETE /facturas/{factura_id}
-    const confirmar = confirm('¿Seguro que deseas eliminar esta factura? Las facturas suelen ser inmutables.');
-    if (confirmar) {
-      this.facturas = this.facturas.filter(f => f.id !== id);
+  private getNextId(): string {
+    const maxId = this.facturas.reduce((max, f) => {
+      const idNum = parseInt(f.id, 10);
+      return isNaN(idNum) ? max : Math.max(max, idNum);
+    }, 0);
+    return (maxId + 1).toString();
+  }
+
+  crearFactura() {
+    this.facturaForm.reset();
+    this.facturaForm.patchValue({
+      fecha_emision: new Date().toISOString().split('T')[0],
+      precio_carro_base: 0,
+      costo_mantenimiento: 0,
+      descuento: 0,
+      total: 0,
+    });
+  }
+
+  guardarFactura() {
+    if (this.facturaForm.valid) {
+      const nuevaFactura: Factura = {
+        id: this.getNextId(),
+        ...this.facturaForm.getRawValue(),
+      };
+      this.facturas.push(nuevaFactura);
+      this.filtrarFacturas();
+      this.showMessageModal('Factura creada exitosamente.');
+      this.facturaForm.reset();
+    } else {
+      this.facturaForm.markAllAsTouched();
     }
   }
 
-  // Función para obtener la clase de Bootstrap basada en el estado
-  obtenerClaseEstado(estado: string): string {
-    switch (estado) {
-      case 'PAGADA':
-        return 'badge bg-success';
-      case 'PENDIENTE':
-        return 'badge bg-warning text-dark';
-      case 'ANULADA':
-        return 'badge bg-danger';
-      default:
-        return 'badge bg-secondary';
+  calcularTotal() {
+    const { precio_carro_base, costo_mantenimiento, descuento } =
+      this.facturaForm.getRawValue();
+    const total =
+      (precio_carro_base || 0) + (costo_mantenimiento || 0) - (descuento || 0);
+    this.facturaForm.patchValue({ total }, { emitEvent: false });
+  }
+
+  eliminarFactura(id: string) {
+    this.facturaIdToDelete = id;
+    this.showConfirmModal();
+  }
+
+  confirmarEliminar() {
+    if (this.facturaIdToDelete) {
+      this.facturas = this.facturas.filter(
+        (f) => f.id !== this.facturaIdToDelete
+      );
+      this.filtrarFacturas();
+      this.showMessageModal(
+        `Factura con ID ${this.facturaIdToDelete} eliminada.`
+      );
+      this.facturaIdToDelete = null;
     }
+  }
+
+  private showMessageModal(message: string): void {
+    this.messageModalText = message;
+    console.log(`[Message Modal] ${message}`);
+  }
+
+  private showConfirmModal(): void {
+    console.log(
+      `[Confirm Modal] Solicitud de eliminación para ${this.facturaIdToDelete}`
+    );
   }
 }

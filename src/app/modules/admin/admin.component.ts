@@ -1,66 +1,136 @@
-import { CommonModule, DatePipe } from '@angular/common'; // Importamos DatePipe para el HTML
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { CommonModule, DatePipe } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 
-// Nueva Interfaz de Datos
-interface Admin { // Interfaz renombrada a 'Admin' para consistencia
+interface Admin {
   id: string;
-  nombre: string;
-  apellido: string;
+  username: string;
+  password: string;
   email: string;
   rol: string;
   fechaCreacion: string;
 }
 
 @Component({
-  // Selector corregido a 'app-admin'
-  selector: 'app-admin', 
+  selector: 'app-admin',
   standalone: true,
-  // Agregamos DatePipe a imports si se usa en el HTML
-  imports: [CommonModule, FormsModule, DatePipe], 
-  // La ruta del template asumo que es './admin.component.html'
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, DatePipe],
   templateUrl: './admin.component.html',
-  // Reutilizamos el estilo de tabla/contenedor
-  styleUrls: ['../clientes/clientes.component.scss'] 
+  styleUrls: ['../clientes/clientes.component.scss'],
 })
-// Clase renombrada a 'AdminComponent'
-export class AdminComponent { 
+export class AdminComponent implements OnInit {
   filtro = '';
+  adminForm!: FormGroup;
+  messageModalText: string = '';
+  adminIdToDelete: string | null = null;
 
-  // Datos de prueba (Simulando la respuesta del GET /admin - Listar)
-  // El nombre de la variable 'administradores' puede mantenerse, o renombrarse a 'admins'
   admins: Admin[] = [
     {
       id: 'AD1',
-      nombre: 'Marco',
-      apellido: 'Velez',
+      username: 'marco_admin',
+      password: '••••••••',
       email: 'marco.admin@empresa.com',
       rol: 'SuperAdmin',
       fechaCreacion: '2024-01-15',
     },
     {
       id: 'AD2',
-      nombre: 'Luisa',
-      apellido: 'Giraldo',
+      username: 'luisa_g',
+      password: '••••••••',
       email: 'luisa.g@empresa.com',
       rol: 'Administrador',
       fechaCreacion: '2024-03-01',
     },
   ];
 
-  // Funciones Mapeadas a los Métodos HTTP
-  buscar() { // Mapea a GET /admin/{admin_id}
-    console.log('Buscando administrador:', this.filtro);
+  filteredAdmins: Admin[] = [];
+
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.adminForm = this.fb.group({
+      username: ['', [Validators.required, Validators.minLength(4)]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+    });
+
+    this.filteredAdmins = [...this.admins];
   }
 
-  crearAdmin() { // Mapea a POST /admin/Crear Admin
-    alert('Función crear nuevo administrador');
-  }
-
-  eliminarAdmin(id: string) { // Mapea a DELETE /admin/{admin_id}
-    const confirmar = confirm('¿Seguro que deseas eliminar este administrador?');
-    if (confirmar) {
-      this.admins = this.admins.filter(a => a.id !== id);
+  filtrarAdmins() {
+    const term = this.filtro.toLowerCase().trim();
+    if (!term) {
+      this.filteredAdmins = [...this.admins];
+      return;
     }
+    this.filteredAdmins = this.admins.filter(
+      (a) =>
+        a.username.toLowerCase().includes(term) ||
+        a.email.toLowerCase().includes(term)
+    );
+  }
+
+  private getNextId(): string {
+    const maxId = this.admins.reduce((max, a) => {
+      const num = parseInt(a.id.replace('AD', ''), 10);
+      return isNaN(num) ? max : Math.max(max, num);
+    }, 0);
+    return `AD${maxId + 1}`;
+  }
+
+  crearAdmin() {
+    this.adminForm.reset();
+  }
+
+  guardarAdmin() {
+    if (this.adminForm.valid) {
+      const nuevoAdmin: Admin = {
+        id: this.getNextId(),
+        username: this.adminForm.value.username,
+        password: this.adminForm.value.password,
+        email: `${this.adminForm.value.username}@empresa.com`,
+        rol: 'Administrador',
+        fechaCreacion: new Date().toISOString().split('T')[0],
+      };
+
+      this.admins.push(nuevoAdmin);
+      this.filtrarAdmins();
+      this.showMessageModal('Administrador creado exitosamente.');
+      this.adminForm.reset();
+    } else {
+      this.adminForm.markAllAsTouched();
+    }
+  }
+
+  eliminarAdmin(id: string) {
+    this.adminIdToDelete = id;
+    this.showConfirmModal();
+  }
+
+  confirmarEliminar() {
+    if (this.adminIdToDelete) {
+      this.admins = this.admins.filter((a) => a.id !== this.adminIdToDelete);
+      this.filtrarAdmins();
+      this.showMessageModal(
+        `Administrador con ID ${this.adminIdToDelete} eliminado.`
+      );
+      this.adminIdToDelete = null;
+    }
+  }
+
+  private showMessageModal(message: string): void {
+    this.messageModalText = message;
+    console.log(`[Message Modal] ${message}`);
+  }
+
+  private showConfirmModal(): void {
+    console.log(
+      `[Confirm Modal] Eliminación solicitada para ${this.adminIdToDelete}`
+    );
   }
 }

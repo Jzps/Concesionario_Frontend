@@ -1,84 +1,155 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-
+import { Component, OnInit } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 
 interface Auto {
   id: string;
+  name: string;
+  description: string;
+  tipo: string;
   marca: string;
   modelo: string;
-  placa: string;
-  vin: string;
-  anio: number;
-  color: string;
-  estado: 'DISPONIBLE' | 'VENDIDO'; 
+  precio: number;
+  kilometraje?: number | null;
+  autonomia?: number | null;
+  estado: 'DISPONIBLE' | 'VENDIDO';
 }
-
-
 
 @Component({
   selector: 'app-autos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './autos.component.html',
-  styleUrls: ['./autos.component.scss'] 
+  styleUrls: ['../clientes/clientes.component.scss'],
 })
-export class AutosComponent {
+export class AutosComponent implements OnInit {
   filtro = '';
- 
-  mostrandoVendidos: boolean = false; 
+  mostrandoVendidos = false;
+  autoForm!: FormGroup;
+  messageModalText: string = '';
+  autoIdToDelete: string | null = null;
 
-  
   todosLosAutos: Auto[] = [
-    { id: 'A1', marca: 'Toyota', modelo: 'Corolla', placa: 'XYZ123', vin: '1A987B654C321D', anio: 2020, color: 'Gris', estado: 'DISPONIBLE' },
-    { id: 'A2', marca: 'Nissan', modelo: 'Versa', placa: 'ABC456', vin: '2B123C456D789E', anio: 2022, color: 'Blanco', estado: 'DISPONIBLE' },
-    { id: 'A3', marca: 'Mazda', modelo: '3', placa: 'DEF789', vin: '3C456D789E123F', anio: 2021, color: 'Rojo', estado: 'VENDIDO' }, // Auto vendido
+    {
+      id: 'A1',
+      name: 'Sedán Familiar',
+      description: 'Vehículo cómodo para ciudad',
+      tipo: 'Sedán',
+      marca: 'Toyota',
+      modelo: 'Corolla',
+      precio: 85000000,
+      kilometraje: 15000,
+      autonomia: 500,
+      estado: 'DISPONIBLE',
+    },
+    {
+      id: 'A2',
+      name: 'SUV Premium',
+      description: 'Amplio y potente',
+      tipo: 'SUV',
+      marca: 'Nissan',
+      modelo: 'X-Trail',
+      precio: 125000000,
+      kilometraje: 22000,
+      autonomia: 600,
+      estado: 'VENDIDO',
+    },
   ];
 
- 
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.autoForm = this.fb.group({
+      name: ['', Validators.required],
+      description: [''],
+      tipo: ['', Validators.required],
+      marca: ['', Validators.required],
+      modelo: ['', Validators.required],
+      precio: [0, [Validators.required, Validators.min(1)]],
+      kilometraje: [null, [Validators.min(0)]],
+      autonomia: [null, [Validators.min(0)]],
+    });
+  }
+
   get autosMostrados(): Auto[] {
-    if (this.mostrandoVendidos) {
-      
-      return this.todosLosAutos.filter(a => a.estado === 'VENDIDO');
+    return this.todosLosAutos.filter(
+      (a) => a.estado === (this.mostrandoVendidos ? 'VENDIDO' : 'DISPONIBLE')
+    );
+  }
+
+  private getNextId(): string {
+    const maxId = this.todosLosAutos.reduce((max, auto) => {
+      const num = parseInt(auto.id.replace('A', ''), 10);
+      return isNaN(num) ? max : Math.max(max, num);
+    }, 0);
+    return `A${maxId + 1}`;
+  }
+
+  crearAuto() {
+    this.autoForm.reset();
+  }
+
+  guardarAuto() {
+    if (this.autoForm.valid) {
+      const nuevoAuto: Auto = {
+        id: this.getNextId(),
+        ...this.autoForm.value,
+        estado: 'DISPONIBLE',
+      };
+
+      this.todosLosAutos.push(nuevoAuto);
+      this.showMessageModal('Auto agregado exitosamente al inventario.');
+      this.autoForm.reset();
+    } else {
+      this.autoForm.markAllAsTouched();
     }
-    
-    return this.todosLosAutos.filter(a => a.estado === 'DISPONIBLE');
   }
 
-  
-
-  buscar() { 
-    console.log('Buscando auto por VIN o Placa:', this.filtro);
-  }
-
-  comprarAuto() { 
-    alert('Función Comprar Auto (POST)');
-  }
-
-  editarAuto(id: string) { 
-    alert(`Editar auto con ID: ${id}`);
-  }
-
-  eliminarAuto(id: string) { 
-    const confirmar = confirm('¿Seguro que deseas eliminar este auto?');
-    if (confirmar) {
-        this.todosLosAutos = this.todosLosAutos.filter(a => a.id !== id);
-    }
-  }
-
-  venderAuto(id: string) { 
-    const auto = this.todosLosAutos.find(a => a.id === id);
+  venderAuto(id: string) {
+    const auto = this.todosLosAutos.find((a) => a.id === id);
     if (auto) {
-        auto.estado = 'VENDIDO';
-        alert(`Auto con ID: ${id} marcado como VENDIDO.`);
+      auto.estado = 'VENDIDO';
+      this.showMessageModal(
+        `El auto ${auto.name} ha sido marcado como VENDIDO.`
+      );
     }
   }
 
-  
-  
+  eliminarAuto(id: string) {
+    this.autoIdToDelete = id;
+    this.showConfirmModal();
+  }
+
+  confirmarEliminar() {
+    if (this.autoIdToDelete) {
+      this.todosLosAutos = this.todosLosAutos.filter(
+        (a) => a.id !== this.autoIdToDelete
+      );
+      this.showMessageModal(
+        `Auto con ID ${this.autoIdToDelete} eliminado del sistema.`
+      );
+      this.autoIdToDelete = null;
+    }
+  }
+
   alternarVista() {
     this.mostrandoVendidos = !this.mostrandoVendidos;
-    this.filtro = ''; 
-    console.log(`Cambiando a vista: ${this.mostrandoVendidos ? 'Vendidos' : 'Disponibles'}`);
+  }
+
+  private showMessageModal(message: string): void {
+    this.messageModalText = message;
+    console.log(`[Message Modal] ${message}`);
+  }
+
+  private showConfirmModal(): void {
+    console.log(
+      `[Confirm Modal] Solicitud de eliminación para ${this.autoIdToDelete}`
+    );
   }
 }

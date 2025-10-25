@@ -1,89 +1,254 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { DropdownModule } from '@coreui/angular'; // Necesario para el menú desplegable (si usas CoreUI)
+import { Component, OnInit } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { DropdownModule } from '@coreui/angular';
 
-// Nueva Interfaz de Datos
 interface Empleado {
   id: string;
   nombre: string;
   apellido: string;
   dni: string;
-  cargo: 'VENDEDOR' | 'TECNICO' | 'ADMINISTRATIVO'; // Tipos de empleado
+  cargo: 'VENDEDOR' | 'TECNICO' | 'ADMINISTRATIVO';
+  correo: string;
   telefono: string;
   salario: number;
+  fecha_contratacion: string;
+  concesionario_id: string;
 }
+
+type FormularioTipo = 'GENERAL' | 'VENDEDOR' | 'TECNICO';
 
 @Component({
   selector: 'app-empleados',
   standalone: true,
-  // Asegúrate de importar DropdownModule si usas las clases de CoreUI para el menú
-  imports: [CommonModule, FormsModule, CurrencyPipe, DropdownModule], 
+  imports: [
+    CommonModule,
+    FormsModule,
+    CurrencyPipe,
+    DropdownModule,
+    ReactiveFormsModule,
+  ],
   templateUrl: './empleados.component.html',
-  // Reutilizamos el estilo de tabla/contenedor
-  styleUrls: ['../clientes/clientes.component.scss'] 
+  styleUrls: ['../clientes/clientes.component.scss'],
 })
-export class EmpleadosComponent {
+export class EmpleadosComponent implements OnInit {
   filtro = '';
-  // Opciones de vista: 'TODOS', 'VENDEDORES', 'TECNICOS'
-  vistaActual: 'TODOS' | 'VENDEDORES' | 'TECNICOS' = 'TODOS'; 
+  vistaActual: 'TODOS' | 'VENDEDORES' | 'TECNICOS' = 'TODOS';
+  empleadoForm!: FormGroup;
+  formTipo: FormularioTipo = 'GENERAL';
+  modalTitle: string = 'Registrar Empleado';
 
-  // Datos de prueba
   todosLosEmpleados: Empleado[] = [
-    { id: 'E1', nombre: 'Sofía', apellido: 'Rojas', dni: '987654321', cargo: 'TECNICO', telefono: '3101234567', salario: 2500000 },
-    { id: 'E2', nombre: 'Ricardo', apellido: 'Méndez', dni: '123456789', cargo: 'VENDEDOR', telefono: '3129876543', salario: 1800000 },
-    { id: 'E3', nombre: 'Marta', apellido: 'Perez', dni: '111222333', cargo: 'ADMINISTRATIVO', telefono: '3151112223', salario: 2000000 },
+    {
+      id: 'E1',
+      nombre: 'Sofía',
+      apellido: 'Rojas',
+      dni: '9876543210',
+      cargo: 'TECNICO',
+      correo: 'sofia@corp.com',
+      telefono: '3101234567',
+      salario: 2500000,
+      fecha_contratacion: '2022-08-15',
+      concesionario_id: 'C1',
+    },
+    {
+      id: 'E2',
+      nombre: 'Ricardo',
+      apellido: 'Méndez',
+      dni: '1234567890',
+      cargo: 'VENDEDOR',
+      correo: 'ricardo@corp.com',
+      telefono: '3129876543',
+      salario: 1800000,
+      fecha_contratacion: '2023-01-20',
+      concesionario_id: 'C1',
+    },
+    {
+      id: 'E3',
+      nombre: 'Marta',
+      apellido: 'Perez',
+      dni: '1112223334',
+      cargo: 'ADMINISTRATIVO',
+      correo: 'marta@corp.com',
+      telefono: '3151112223',
+      salario: 2000000,
+      fecha_contratacion: '2021-05-10',
+      concesionario_id: 'C1',
+    },
   ];
 
-  // Propiedad que la tabla usa para iterar
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.empleadoForm = this.fb.group({
+      nombre: ['', [Validators.required]],
+      apellido: ['', [Validators.required]],
+
+      dni: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+      correo: ['', [Validators.required, Validators.email]],
+      telefono: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+
+      fecha_contratacion: [
+        this.getTodayDate(),
+        [Validators.required, Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)],
+      ],
+
+      salario: [
+        null as number | null,
+        [Validators.required, Validators.min(100000)],
+      ],
+
+      concesionario_id: [
+        '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+        [Validators.required],
+      ],
+    });
+  }
+
+  private getNextId(): string {
+    const maxIdNumber = this.todosLosEmpleados.reduce((max, empleado) => {
+      const idNumber = parseInt(empleado.id.replace(/[A-Z]/g, ''), 10);
+      return isNaN(idNumber) ? max : Math.max(max, idNumber);
+    }, 0);
+    return 'E' + (maxIdNumber + 1);
+  }
+
+  private getTodayDate(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   get empleadosMostrados(): Empleado[] {
-    // 1. Filtrar por vista actual (GET /empleados/vendedores, GET /empleados/tecnicos)
     let listaFiltrada = this.todosLosEmpleados;
+
     if (this.vistaActual === 'VENDEDORES') {
-      listaFiltrada = this.todosLosEmpleados.filter(e => e.cargo === 'VENDEDOR');
+      listaFiltrada = this.todosLosEmpleados.filter(
+        (e) => e.cargo === 'VENDEDOR'
+      );
     } else if (this.vistaActual === 'TECNICOS') {
-      listaFiltrada = this.todosLosEmpleados.filter(e => e.cargo === 'TECNICO');
+      listaFiltrada = this.todosLosEmpleados.filter(
+        (e) => e.cargo === 'TECNICO'
+      );
     }
-    
-    // 2. Aplicar filtro de búsqueda (si lo hubiera, implementando lógica real)
-    if (this.filtro && this.vistaActual === 'TODOS') {
-        // En un caso real, la búsqueda se haría en la API (GET /empleados/{empleado_id})
-        return listaFiltrada.filter(e => 
-          e.nombre.toLowerCase().includes(this.filtro.toLowerCase()) || 
-          e.dni.includes(this.filtro)
-        );
+
+    const term = this.filtro.toLowerCase().trim();
+    if (term) {
+      listaFiltrada = listaFiltrada.filter(
+        (e) =>
+          e.nombre.toLowerCase().includes(term) ||
+          e.apellido.toLowerCase().includes(term) ||
+          e.dni.includes(term)
+      );
     }
 
     return listaFiltrada;
   }
 
-  // --- Funciones Mapeadas a Métodos HTTP ---
-
-  buscar() { // Mapea a GET /empleados/{empleado_id}
-    console.log('Buscando empleado:', this.filtro);
+  cambiarVista(vista: 'TODOS' | 'VENDEDORES' | 'TECNICOS') {
+    this.vistaActual = vista;
+    this.filtro = '';
   }
 
-  // Mapea a POST /empleados, POST /vendedores, POST /tecnicos
-  registrarEmpleado(tipo: 'GENERAL' | 'VENDEDOR' | 'TECNICO') { 
-    alert(`Abriendo formulario para registrar ${tipo} (POST)`);
+  registrarEmpleado(tipo: FormularioTipo) {
+    this.formTipo = tipo;
+    this.empleadoForm.reset({
+      fecha_contratacion: this.getTodayDate(),
+      concesionario_id: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+      salario: tipo === 'GENERAL' ? 0 : null,
+    });
+
+    const salarioControl = this.empleadoForm.get('salario');
+    if (tipo !== 'GENERAL') {
+      salarioControl?.setValidators([
+        Validators.required,
+        Validators.min(100000),
+      ]);
+      this.modalTitle = `Registrar ${
+        tipo === 'VENDEDOR' ? 'Vendedor' : 'Técnico'
+      }`;
+    } else {
+      salarioControl?.setValidators([Validators.min(0)]);
+      this.modalTitle = 'Registrar Empleado General';
+    }
+    salarioControl?.updateValueAndValidity();
+
+    this.showModal('empleadoModal');
   }
 
-  editarEmpleado(id: string) { // Mapea a PUT /empleados/{empleado_id}
-    alert(`Editar empleado con ID: ${id} (PUT)`);
+  guardarEmpleado() {
+    if (this.empleadoForm.invalid) {
+      this.empleadoForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.empleadoForm.value;
+
+    let cargoAsignado: Empleado['cargo'];
+    if (this.formTipo === 'VENDEDOR') {
+      cargoAsignado = 'VENDEDOR';
+    } else if (this.formTipo === 'TECNICO') {
+      cargoAsignado = 'TECNICO';
+    } else {
+      cargoAsignado = 'ADMINISTRATIVO';
+    }
+
+    const nuevoEmpleado: Empleado = {
+      id: this.getNextId(),
+      ...formValue,
+      cargo: cargoAsignado,
+
+      salario:
+        this.formTipo === 'GENERAL'
+          ? formValue.salario || 0
+          : formValue.salario,
+    };
+
+    this.todosLosEmpleados.push(nuevoEmpleado);
+    this.empleadoForm.reset();
+    this.hideModal('empleadoModal');
+    alert(
+      `Empleado (${cargoAsignado}) creado exitosamente con ID ${nuevoEmpleado.id}.`
+    );
   }
 
-  eliminarEmpleado(id: string) { // Mapea a DELETE /empleados/{empleado_id}
+  editarEmpleado(id: string) {
+    alert(`Función de edición pendiente para el empleado con ID: ${id}`);
+  }
+
+  eliminarEmpleado(id: string) {
     const confirmar = confirm('¿Seguro que deseas eliminar este empleado?');
     if (confirmar) {
-      this.todosLosEmpleados = this.todosLosEmpleados.filter(e => e.id !== id);
+      this.todosLosEmpleados = this.todosLosEmpleados.filter(
+        (e) => e.id !== id
+      );
+      alert(`Empleado con ID ${id} eliminado.`);
     }
   }
 
-  // --- Función de Vista Alterna ---
-  
-  cambiarVista(vista: 'TODOS' | 'VENDEDORES' | 'TECNICOS') {
-    this.vistaActual = vista;
-    this.filtro = ''; // Limpiar filtro al cambiar de vista
-    console.log(`Cambiando a vista: ${vista}`);
+  private showModal(id: string): void {
+    const modalElement = document.getElementById(id);
+    if (modalElement) {
+      (window as any).bootstrap?.Modal.getOrCreateInstance(
+        modalElement
+      )?.show();
+    }
+  }
+
+  private hideModal(id: string): void {
+    const modalElement = document.getElementById(id);
+    if (modalElement) {
+      (window as any).bootstrap?.Modal.getOrCreateInstance(
+        modalElement
+      )?.hide();
+    }
   }
 }

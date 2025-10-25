@@ -1,88 +1,156 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 
-// Nueva Interfaz de Datos
 interface Mantenimiento {
   id: string;
-  autoPlaca: string;
-  tecnico: string;
-  fechaEntrada: string;
+  auto_id: string;
+  empleado_id: string;
+  cliente_id: string;
+  fecha: string;
+  detalle: string;
   costo: number;
-  descripcion: string;
-  estado: 'INICIADO' | 'EN_PROGRESO' | 'FINALIZADO';
 }
 
 @Component({
   selector: 'app-mantenimientos',
   standalone: true,
-  // Necesitamos DatePipe y CurrencyPipe
-  imports: [CommonModule, FormsModule, DatePipe, CurrencyPipe], 
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    DatePipe,
+    CurrencyPipe,
+  ],
   templateUrl: './mantenimientos.component.html',
-  // Reutilizamos el estilo de tabla/contenedor
-  styleUrls: ['../clientes/clientes.component.scss'] 
+  styleUrls: ['../clientes/clientes.component.scss'],
 })
-export class MantenimientosComponent {
+export class MantenimientosComponent implements OnInit {
   filtro = '';
+  mantenimientoForm!: FormGroup;
+  messageModalText: string = '';
+  mantenimientoIdToDelete: string | null = null;
 
-  // Datos de prueba (Simulando la respuesta del GET /mantenimientos - Listar)
   mantenimientos: Mantenimiento[] = [
     {
       id: 'M101',
-      autoPlaca: 'XYZ123',
-      tecnico: 'Sofía Rojas',
-      fechaEntrada: '2025-10-01',
+      auto_id: 'XYZ123',
+      empleado_id: 'E001',
+      cliente_id: 'C001',
+      fecha: '2025-10-01',
+      detalle: 'Cambio de aceite y filtros',
       costo: 350000,
-      descripcion: 'Cambio de aceite y filtros',
-      estado: 'FINALIZADO',
     },
     {
       id: 'M102',
-      autoPlaca: 'ABC456',
-      tecnico: 'Jorge Diaz',
-      fechaEntrada: '2025-10-15',
+      auto_id: 'ABC456',
+      empleado_id: 'E002',
+      cliente_id: 'C002',
+      fecha: '2025-10-15',
+      detalle: 'Revisión de frenos',
       costo: 0,
-      descripcion: 'Revisión de frenos',
-      estado: 'EN_PROGRESO',
     },
     {
       id: 'M103',
-      autoPlaca: 'KLM789',
-      tecnico: 'Sofía Rojas',
-      fechaEntrada: '2025-10-18',
+      auto_id: 'KLM789',
+      empleado_id: 'E003',
+      cliente_id: 'C003',
+      fecha: '2025-10-18',
+      detalle: 'Diagnóstico de motor',
       costo: 0,
-      descripcion: 'Diagnóstico de motor',
-      estado: 'INICIADO',
     },
   ];
 
-  // Funciones Mapeadas a los Métodos HTTP
-  buscar() { // Mapea a GET /mantenimientos/{mantenimiento_id}
-    console.log('Buscando mantenimiento:', this.filtro);
+  filteredMantenimientos: Mantenimiento[] = [];
+
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.mantenimientoForm = this.fb.group({
+      auto_id: ['', Validators.required],
+      empleado_id: ['', Validators.required],
+      cliente_id: ['', Validators.required],
+      fecha: ['', Validators.required],
+      detalle: ['', Validators.required],
+      costo: [0, [Validators.required, Validators.min(0)]],
+    });
+
+    this.filteredMantenimientos = [...this.mantenimientos];
   }
 
-  crearMantenimiento() { // Mapea a POST /mantenimientos
-    alert('Función crear nuevo mantenimiento');
+  filtrarMantenimientos() {
+    const term = this.filtro.toLowerCase().trim();
+    this.filteredMantenimientos = !term
+      ? [...this.mantenimientos]
+      : this.mantenimientos.filter(
+          (m) =>
+            m.id.toLowerCase().includes(term) ||
+            m.auto_id.toLowerCase().includes(term)
+        );
   }
 
-  eliminarMantenimiento(id: string) { // Mapea a DELETE /mantenimientos/{mantenimiento_id}
-    const confirmar = confirm('¿Seguro que deseas eliminar este registro de mantenimiento?');
-    if (confirmar) {
-      this.mantenimientos = this.mantenimientos.filter(m => m.id !== id);
+  private getNextId(): string {
+    const maxId = this.mantenimientos.reduce((max, m) => {
+      const num = parseInt(m.id.replace('M', ''), 10);
+      return isNaN(num) ? max : Math.max(max, num);
+    }, 100);
+    return `M${maxId + 1}`;
+  }
+
+  crearMantenimiento() {
+    this.mantenimientoForm.reset({
+      fecha: new Date().toISOString().split('T')[0],
+      costo: 0,
+    });
+  }
+
+  guardarMantenimiento() {
+    if (this.mantenimientoForm.valid) {
+      const nuevoMantenimiento: Mantenimiento = {
+        id: this.getNextId(),
+        ...this.mantenimientoForm.getRawValue(),
+      };
+      this.mantenimientos.push(nuevoMantenimiento);
+      this.filtrarMantenimientos();
+      this.showMessageModal('Mantenimiento creado exitosamente.');
+      this.mantenimientoForm.reset();
+    } else {
+      this.mantenimientoForm.markAllAsTouched();
     }
   }
 
-  // Función para obtener la clase de Bootstrap basada en el estado (reutilizada de Facturas)
-  obtenerClaseEstado(estado: string): string {
-    switch (estado) {
-      case 'FINALIZADO':
-        return 'badge bg-success';
-      case 'EN_PROGRESO':
-        return 'badge bg-warning text-dark';
-      case 'INICIADO':
-        return 'badge bg-primary';
-      default:
-        return 'badge bg-secondary';
+  eliminarMantenimiento(id: string) {
+    this.mantenimientoIdToDelete = id;
+    this.showConfirmModal();
+  }
+
+  confirmarEliminar() {
+    if (this.mantenimientoIdToDelete) {
+      this.mantenimientos = this.mantenimientos.filter(
+        (m) => m.id !== this.mantenimientoIdToDelete
+      );
+      this.filtrarMantenimientos();
+      this.showMessageModal(
+        `Mantenimiento con ID ${this.mantenimientoIdToDelete} eliminado.`
+      );
+      this.mantenimientoIdToDelete = null;
     }
+  }
+
+  private showMessageModal(message: string): void {
+    this.messageModalText = message;
+    console.log(`[Message Modal] ${message}`);
+  }
+
+  private showConfirmModal(): void {
+    console.log(
+      `[Confirm Modal] Solicitud de eliminación para ${this.mantenimientoIdToDelete}`
+    );
   }
 }
