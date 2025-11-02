@@ -8,19 +8,12 @@ import {
   Validators,
 } from '@angular/forms';
 import { DropdownModule } from '@coreui/angular';
-
-interface Empleado {
-  id: string;
-  nombre: string;
-  apellido: string;
-  dni: string;
-  cargo: 'VENDEDOR' | 'TECNICO' | 'ADMINISTRATIVO';
-  correo: string;
-  telefono: string;
-  salario: number;
-  fecha_contratacion: string;
-  concesionario_id: string;
-}
+import {
+  Empleado,
+  EmpleadosService,
+  Tecnico,
+  Vendedor,
+} from '../../services/empleados.service';
 
 type FormularioTipo = 'GENERAL' | 'VENDEDOR' | 'TECNICO';
 
@@ -43,101 +36,52 @@ export class EmpleadosComponent implements OnInit {
   empleadoForm!: FormGroup;
   formTipo: FormularioTipo = 'GENERAL';
   modalTitle: string = 'Registrar Empleado';
+  messageModalText: string = '';
 
-  todosLosEmpleados: Empleado[] = [
-    {
-      id: 'E1',
-      nombre: 'Sofía',
-      apellido: 'Rojas',
-      dni: '9876543210',
-      cargo: 'TECNICO',
-      correo: 'sofia@corp.com',
-      telefono: '3101234567',
-      salario: 2500000,
-      fecha_contratacion: '2022-08-15',
-      concesionario_id: 'C1',
-    },
-    {
-      id: 'E2',
-      nombre: 'Ricardo',
-      apellido: 'Méndez',
-      dni: '1234567890',
-      cargo: 'VENDEDOR',
-      correo: 'ricardo@corp.com',
-      telefono: '3129876543',
-      salario: 1800000,
-      fecha_contratacion: '2023-01-20',
-      concesionario_id: 'C1',
-    },
-    {
-      id: 'E3',
-      nombre: 'Marta',
-      apellido: 'Perez',
-      dni: '1112223334',
-      cargo: 'ADMINISTRATIVO',
-      correo: 'marta@corp.com',
-      telefono: '3151112223',
-      salario: 2000000,
-      fecha_contratacion: '2021-05-10',
-      concesionario_id: 'C1',
-    },
-  ];
+  empleados: Empleado[] = [];
 
-  constructor(private fb: FormBuilder) {}
+  constructor(
+    private fb: FormBuilder,
+    private empleadosService: EmpleadosService
+  ) {}
 
   ngOnInit(): void {
     this.empleadoForm = this.fb.group({
       nombre: ['', [Validators.required]],
       apellido: ['', [Validators.required]],
-
       dni: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
       correo: ['', [Validators.required, Validators.email]],
       telefono: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
-
-      fecha_contratacion: [
-        this.getTodayDate(),
-        [Validators.required, Validators.pattern(/^\d{4}-\d{2}-\d{2}$/)],
-      ],
-
-      salario: [
-        null as number | null,
-        [Validators.required, Validators.min(100000)],
-      ],
-
+      fecha_contratacion: [this.getTodayDate(), [Validators.required]],
+      salario: [null, [Validators.required, Validators.min(100000)]],
       concesionario_id: [
         '3fa85f64-5717-4562-b3fc-2c963f66afa6',
         [Validators.required],
       ],
     });
+
+    this.cargarEmpleados();
   }
 
-  private getNextId(): string {
-    const maxIdNumber = this.todosLosEmpleados.reduce((max, empleado) => {
-      const idNumber = parseInt(empleado.id.replace(/[A-Z]/g, ''), 10);
-      return isNaN(idNumber) ? max : Math.max(max, idNumber);
-    }, 0);
-    return 'E' + (maxIdNumber + 1);
-  }
-
-  private getTodayDate(): string {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  cargarEmpleados(): void {
+    this.empleadosService.listarEmpleados().subscribe({
+      next: (data) => {
+        this.empleados = data;
+        console.log('Empleados cargados:', data);
+      },
+      error: (err) => {
+        console.error('Error al cargar empleados:', err);
+        this.showMessageModal('Error al obtener la lista de empleados.');
+      },
+    });
   }
 
   get empleadosMostrados(): Empleado[] {
-    let listaFiltrada = this.todosLosEmpleados;
-
+    let listaFiltrada = this.empleados;
     if (this.vistaActual === 'VENDEDORES') {
-      listaFiltrada = this.todosLosEmpleados.filter(
-        (e) => e.cargo === 'VENDEDOR'
-      );
+      listaFiltrada = this.empleados.filter((e) => e.cargo === 'VENDEDOR');
     } else if (this.vistaActual === 'TECNICOS') {
-      listaFiltrada = this.todosLosEmpleados.filter(
-        (e) => e.cargo === 'TECNICO'
-      );
+      listaFiltrada = this.empleados.filter((e) => e.cargo === 'TECNICO');
     }
 
     const term = this.filtro.toLowerCase().trim();
@@ -149,13 +93,26 @@ export class EmpleadosComponent implements OnInit {
           e.dni.includes(term)
       );
     }
-
     return listaFiltrada;
   }
 
   cambiarVista(vista: 'TODOS' | 'VENDEDORES' | 'TECNICOS') {
     this.vistaActual = vista;
     this.filtro = '';
+
+    if (vista === 'VENDEDORES') {
+      this.empleadosService.listarVendedores().subscribe({
+        next: (data) => (this.empleados = data),
+        error: () => this.showMessageModal('Error al listar vendedores.'),
+      });
+    } else if (vista === 'TECNICOS') {
+      this.empleadosService.listarTecnicos().subscribe({
+        next: (data) => (this.empleados = data),
+        error: () => this.showMessageModal('Error al listar técnicos.'),
+      });
+    } else {
+      this.cargarEmpleados();
+    }
   }
 
   registrarEmpleado(tipo: FormularioTipo) {
@@ -166,20 +123,12 @@ export class EmpleadosComponent implements OnInit {
       salario: tipo === 'GENERAL' ? 0 : null,
     });
 
-    const salarioControl = this.empleadoForm.get('salario');
-    if (tipo !== 'GENERAL') {
-      salarioControl?.setValidators([
-        Validators.required,
-        Validators.min(100000),
-      ]);
-      this.modalTitle = `Registrar ${
-        tipo === 'VENDEDOR' ? 'Vendedor' : 'Técnico'
-      }`;
-    } else {
-      salarioControl?.setValidators([Validators.min(0)]);
-      this.modalTitle = 'Registrar Empleado General';
-    }
-    salarioControl?.updateValueAndValidity();
+    this.modalTitle =
+      tipo === 'VENDEDOR'
+        ? 'Registrar Vendedor'
+        : tipo === 'TECNICO'
+        ? 'Registrar Técnico'
+        : 'Registrar Empleado General';
 
     this.showModal('empleadoModal');
   }
@@ -191,47 +140,63 @@ export class EmpleadosComponent implements OnInit {
     }
 
     const formValue = this.empleadoForm.value;
-
-    let cargoAsignado: Empleado['cargo'];
-    if (this.formTipo === 'VENDEDOR') {
-      cargoAsignado = 'VENDEDOR';
-    } else if (this.formTipo === 'TECNICO') {
-      cargoAsignado = 'TECNICO';
-    } else {
-      cargoAsignado = 'ADMINISTRATIVO';
-    }
-
     const nuevoEmpleado: Empleado = {
-      id: this.getNextId(),
-      ...formValue,
-      cargo: cargoAsignado,
-
-      salario:
-        this.formTipo === 'GENERAL'
-          ? formValue.salario || 0
-          : formValue.salario,
+      nombre: formValue.nombre,
+      apellido: formValue.apellido,
+      dni: formValue.dni,
+      correo: formValue.correo,
+      telefono: formValue.telefono,
     };
 
-    this.todosLosEmpleados.push(nuevoEmpleado);
-    this.empleadoForm.reset();
-    this.hideModal('empleadoModal');
-    alert(
-      `Empleado (${cargoAsignado}) creado exitosamente con ID ${nuevoEmpleado.id}.`
-    );
+    this.empleadosService.crearEmpleado(nuevoEmpleado).subscribe({
+      next: (empleadoCreado) => {
+        console.log('Empleado creado:', empleadoCreado);
+
+        if (this.formTipo === 'VENDEDOR') {
+          const vendedor: Vendedor = { empleado_id: empleadoCreado.id! };
+          this.empleadosService.registrarVendedor(vendedor).subscribe();
+        } else if (this.formTipo === 'TECNICO') {
+          const tecnico: Tecnico = { empleado_id: empleadoCreado.id! };
+          this.empleadosService.registrarTecnico(tecnico).subscribe();
+        }
+
+        this.showMessageModal('Empleado registrado exitosamente.');
+        this.cargarEmpleados();
+        this.hideModal('empleadoModal');
+      },
+      error: (err) => {
+        console.error('Error al registrar empleado:', err);
+        this.showMessageModal('Error al registrar el empleado.');
+      },
+    });
   }
 
   editarEmpleado(id: string) {
-    alert(`Función de edición pendiente para el empleado con ID: ${id}`);
+    this.empleadosService.obtenerEmpleadoPorId(id).subscribe({
+      next: (empleado) => {
+        this.empleadoForm.patchValue(empleado);
+        this.showMessageModal(`Editando empleado con ID: ${id}`);
+        this.showModal('empleadoModal');
+      },
+      error: () => this.showMessageModal('Error al cargar datos del empleado.'),
+    });
   }
 
   eliminarEmpleado(id: string) {
-    const confirmar = confirm('¿Seguro que deseas eliminar este empleado?');
-    if (confirmar) {
-      this.todosLosEmpleados = this.todosLosEmpleados.filter(
-        (e) => e.id !== id
-      );
-      alert(`Empleado con ID ${id} eliminado.`);
+    if (confirm('¿Seguro que deseas eliminar este empleado?')) {
+      this.empleadosService.eliminarEmpleado(id).subscribe({
+        next: () => {
+          this.showMessageModal(`Empleado con ID ${id} eliminado.`);
+          this.cargarEmpleados();
+        },
+        error: () => this.showMessageModal('Error al eliminar el empleado.'),
+      });
     }
+  }
+
+  private getTodayDate(): string {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
   }
 
   private showModal(id: string): void {
@@ -250,5 +215,10 @@ export class EmpleadosComponent implements OnInit {
         modalElement
       )?.hide();
     }
+  }
+
+  private showMessageModal(message: string): void {
+    this.messageModalText = message;
+    console.log(`[Message Modal] ${message}`);
   }
 }

@@ -7,16 +7,10 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-
-interface Mantenimiento {
-  id: string;
-  auto_id: string;
-  empleado_id: string;
-  cliente_id: string;
-  fecha: string;
-  detalle: string;
-  costo: number;
-}
+import {
+  Mantenimiento,
+  MantenimientoService,
+} from '../../services/mantenimientos.service';
 
 @Component({
   selector: 'app-mantenimientos',
@@ -36,121 +30,108 @@ export class MantenimientosComponent implements OnInit {
   mantenimientoForm!: FormGroup;
   messageModalText: string = '';
   mantenimientoIdToDelete: string | null = null;
+  mantenimientos: Mantenimiento[] = [];
 
-  mantenimientos: Mantenimiento[] = [
-    {
-      id: 'M101',
-      auto_id: 'XYZ123',
-      empleado_id: 'E001',
-      cliente_id: 'C001',
-      fecha: '2025-10-01',
-      detalle: 'Cambio de aceite y filtros',
-      costo: 350000,
-    },
-    {
-      id: 'M102',
-      auto_id: 'ABC456',
-      empleado_id: 'E002',
-      cliente_id: 'C002',
-      fecha: '2025-10-15',
-      detalle: 'Revisión de frenos',
-      costo: 0,
-    },
-    {
-      id: 'M103',
-      auto_id: 'KLM789',
-      empleado_id: 'E003',
-      cliente_id: 'C003',
-      fecha: '2025-10-18',
-      detalle: 'Diagnóstico de motor',
-      costo: 0,
-    },
-  ];
-
-  filteredMantenimientos: Mantenimiento[] = [];
-
-  constructor(private fb: FormBuilder) {}
+  constructor(
+    private fb: FormBuilder,
+    private mantenimientoService: MantenimientoService
+  ) {}
 
   ngOnInit(): void {
     this.mantenimientoForm = this.fb.group({
       auto_id: ['', Validators.required],
       empleado_id: ['', Validators.required],
       cliente_id: ['', Validators.required],
-      fecha: ['', Validators.required],
+      fecha: [new Date().toISOString().split('T')[0], Validators.required],
       detalle: ['', Validators.required],
       costo: [0, [Validators.required, Validators.min(0)]],
     });
 
-    this.filteredMantenimientos = [...this.mantenimientos];
+    this.cargarMantenimientos();
   }
 
-  filtrarMantenimientos() {
+  cargarMantenimientos(): void {
+    this.mantenimientoService.listarMantenimientos().subscribe({
+      next: (data) => {
+        this.mantenimientos = data;
+        console.log('Mantenimientos cargados:', data);
+      },
+      error: (err) => {
+        console.error('Error al cargar mantenimientos:', err);
+        this.showMessageModal('Error al cargar los mantenimientos.');
+      },
+    });
+  }
+
+  filtrarMantenimientos(): void {
     const term = this.filtro.toLowerCase().trim();
-    this.filteredMantenimientos = !term
-      ? [...this.mantenimientos]
-      : this.mantenimientos.filter(
-          (m) =>
-            m.id.toLowerCase().includes(term) ||
-            m.auto_id.toLowerCase().includes(term)
-        );
+    if (!term) {
+      this.cargarMantenimientos();
+      return;
+    }
+    this.mantenimientos = this.mantenimientos.filter(
+      (m) =>
+        m.id?.toLowerCase().includes(term) ||
+        m.auto_id.toLowerCase().includes(term) ||
+        (m as any).detalle?.toLowerCase().includes(term)
+    );
   }
 
-  private getNextId(): string {
-    const maxId = this.mantenimientos.reduce((max, m) => {
-      const num = parseInt(m.id.replace('M', ''), 10);
-      return isNaN(num) ? max : Math.max(max, num);
-    }, 100);
-    return `M${maxId + 1}`;
-  }
-
-  crearMantenimiento() {
+  crearMantenimiento(): void {
     this.mantenimientoForm.reset({
       fecha: new Date().toISOString().split('T')[0],
       costo: 0,
     });
   }
 
-  guardarMantenimiento() {
-    if (this.mantenimientoForm.valid) {
-      const nuevoMantenimiento: Mantenimiento = {
-        id: this.getNextId(),
-        ...this.mantenimientoForm.getRawValue(),
-      };
-      this.mantenimientos.push(nuevoMantenimiento);
-      this.filtrarMantenimientos();
-      this.showMessageModal('Mantenimiento creado exitosamente.');
-      this.mantenimientoForm.reset();
-    } else {
+  guardarMantenimiento(): void {
+    if (this.mantenimientoForm.invalid) {
       this.mantenimientoForm.markAllAsTouched();
+      return;
     }
+
+    const formData = this.mantenimientoForm.getRawValue();
+    const nuevoMantenimiento: Mantenimiento = {
+      descripcion: formData.detalle,
+      fecha: formData.fecha,
+      costo: formData.costo,
+      empleado_id: formData.empleado_id,
+      auto_id: formData.auto_id,
+    };
+
+    this.mantenimientoService.crearMantenimiento(nuevoMantenimiento).subscribe({
+      next: (response) => {
+        console.log('Mantenimiento creado:', response);
+        this.showMessageModal('Mantenimiento registrado exitosamente.');
+        this.cargarMantenimientos();
+        this.mantenimientoForm.reset();
+      },
+      error: (err) => {
+        console.error('Error al crear mantenimiento:', err);
+        this.showMessageModal('Error al registrar el mantenimiento.');
+      },
+    });
   }
 
-  eliminarMantenimiento(id: string) {
-    this.mantenimientoIdToDelete = id;
-    this.showConfirmModal();
-  }
+  eliminarMantenimiento(id: string): void {
+    if (!confirm('¿Seguro que deseas eliminar este mantenimiento?')) return;
 
-  confirmarEliminar() {
-    if (this.mantenimientoIdToDelete) {
-      this.mantenimientos = this.mantenimientos.filter(
-        (m) => m.id !== this.mantenimientoIdToDelete
-      );
-      this.filtrarMantenimientos();
-      this.showMessageModal(
-        `Mantenimiento con ID ${this.mantenimientoIdToDelete} eliminado.`
-      );
-      this.mantenimientoIdToDelete = null;
-    }
+    this.mantenimientoService.eliminarMantenimiento(id).subscribe({
+      next: () => {
+        this.showMessageModal(
+          `Mantenimiento con ID ${id} eliminado correctamente.`
+        );
+        this.cargarMantenimientos();
+      },
+      error: (err) => {
+        console.error('Error al eliminar mantenimiento:', err);
+        this.showMessageModal('Error al eliminar el mantenimiento.');
+      },
+    });
   }
 
   private showMessageModal(message: string): void {
     this.messageModalText = message;
     console.log(`[Message Modal] ${message}`);
-  }
-
-  private showConfirmModal(): void {
-    console.log(
-      `[Confirm Modal] Solicitud de eliminación para ${this.mantenimientoIdToDelete}`
-    );
   }
 }

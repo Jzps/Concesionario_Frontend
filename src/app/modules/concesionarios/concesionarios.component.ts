@@ -7,13 +7,10 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-
-interface Concesionario {
-  id: string;
-  nombre: string;
-  direccion: string;
-  telefono: string;
-}
+import {
+  Concesionario,
+  ConcesionarioService,
+} from '../../services/concesionario.service';
 
 @Component({
   selector: 'app-concesionarios',
@@ -28,24 +25,13 @@ export class ConcesionariosComponent implements OnInit {
   messageModalText: string = '';
   concesionarioIdToDelete: string | null = null;
 
-  concesionarios: Concesionario[] = [
-    {
-      id: '1',
-      nombre: 'AutoCentro Principal',
-      direccion: 'Av. Libertador #10-50',
-      telefono: '6015551234',
-    },
-    {
-      id: '2',
-      nombre: 'Ruedas del Sur',
-      direccion: 'Calle 25 #5-10',
-      telefono: '6045555678',
-    },
-  ];
-
+  concesionarios: Concesionario[] = [];
   filteredConcesionarios: Concesionario[] = [];
 
-  constructor(private fb: FormBuilder) {}
+  constructor(
+    private fb: FormBuilder,
+    private concesionarioService: ConcesionarioService
+  ) {}
 
   ngOnInit(): void {
     this.concesionarioForm = this.fb.group({
@@ -54,50 +40,86 @@ export class ConcesionariosComponent implements OnInit {
       telefono: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
     });
 
-    this.filteredConcesionarios = [...this.concesionarios];
+    this.cargarConcesionarios();
+  }
+
+  cargarConcesionarios() {
+    this.concesionarioService.listarConcesionarios().subscribe({
+      next: (data) => {
+        this.concesionarios = data;
+        this.filteredConcesionarios = [...data];
+        console.log('Concesionarios cargados:', data);
+      },
+      error: (err) => {
+        console.error('Error al cargar concesionarios:', err);
+        this.showMessageModal('Error al cargar los concesionarios.');
+      },
+    });
   }
 
   filtrarConcesionarios() {
     const term = this.filtro.toLowerCase().trim();
-    this.filteredConcesionarios = !term
-      ? [...this.concesionarios]
-      : this.concesionarios.filter(
-          (c) =>
-            c.nombre.toLowerCase().includes(term) ||
-            c.direccion.toLowerCase().includes(term)
-        );
-  }
-
-  private getNextId(): string {
-    const maxId = this.concesionarios.reduce((max, c) => {
-      const idNum = parseInt(c.id, 10);
-      return isNaN(idNum) ? max : Math.max(max, idNum);
-    }, 0);
-    return (maxId + 1).toString();
+    if (!term) {
+      this.filteredConcesionarios = [...this.concesionarios];
+      return;
+    }
+    this.filteredConcesionarios = this.concesionarios.filter(
+      (c) =>
+        c.nombre.toLowerCase().includes(term) ||
+        c.direccion.toLowerCase().includes(term)
+    );
   }
 
   crearConcesionario() {
     this.concesionarioForm.reset();
+    this.concesionarioIdToDelete = null;
   }
 
   guardarConcesionario() {
     if (this.concesionarioForm.valid) {
-      const nuevoConcesionario: Concesionario = {
-        id: this.getNextId(),
-        ...this.concesionarioForm.value,
-      };
-      this.concesionarios.push(nuevoConcesionario);
-      this.filtrarConcesionarios();
-      this.showMessageModal('Concesionario creado exitosamente.');
-      this.concesionarioForm.reset();
+      const data: Concesionario = this.concesionarioForm.value;
+
+      if (this.concesionarioIdToDelete) {
+        this.concesionarioService
+          .actualizarConcesionario(this.concesionarioIdToDelete, data)
+          .subscribe({
+            next: () => {
+              this.showMessageModal('Concesionario actualizado exitosamente.');
+              this.cargarConcesionarios();
+              this.concesionarioForm.reset();
+              this.concesionarioIdToDelete = null;
+            },
+            error: (err) => {
+              console.error('Error al actualizar:', err);
+              this.showMessageModal('Error al actualizar el concesionario.');
+            },
+          });
+      } else {
+        this.concesionarioService.crearConcesionario(data).subscribe({
+          next: () => {
+            this.showMessageModal('Concesionario creado exitosamente.');
+            this.cargarConcesionarios();
+            this.concesionarioForm.reset();
+          },
+          error: (err) => {
+            console.error('Error al crear concesionario:', err);
+            this.showMessageModal('Error al crear el concesionario.');
+          },
+        });
+      }
     } else {
       this.concesionarioForm.markAllAsTouched();
     }
   }
 
   editarConcesionario(id: string) {
+    const concesionario = this.concesionarios.find((c) => c.id === id);
+    if (!concesionario) return;
+
+    this.concesionarioForm.patchValue(concesionario);
+    this.concesionarioIdToDelete = id;
     this.showMessageModal(
-      `Función de edición pendiente para el concesionario con ID: ${id}`
+      `Editando concesionario con ID: ${id}. Modifica los campos y guarda.`
     );
   }
 
@@ -108,14 +130,21 @@ export class ConcesionariosComponent implements OnInit {
 
   confirmarEliminar() {
     if (this.concesionarioIdToDelete) {
-      this.concesionarios = this.concesionarios.filter(
-        (c) => c.id !== this.concesionarioIdToDelete
-      );
-      this.filtrarConcesionarios();
-      this.showMessageModal(
-        `Concesionario con ID ${this.concesionarioIdToDelete} eliminado.`
-      );
-      this.concesionarioIdToDelete = null;
+      this.concesionarioService
+        .eliminarConcesionario(this.concesionarioIdToDelete)
+        .subscribe({
+          next: () => {
+            this.showMessageModal(
+              `Concesionario con ID ${this.concesionarioIdToDelete} eliminado.`
+            );
+            this.cargarConcesionarios();
+            this.concesionarioIdToDelete = null;
+          },
+          error: (err) => {
+            console.error('Error al eliminar concesionario:', err);
+            this.showMessageModal('Error al eliminar el concesionario.');
+          },
+        });
     }
   }
 

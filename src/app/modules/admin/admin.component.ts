@@ -7,15 +7,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-
-interface Admin {
-  id: string;
-  username: string;
-  password: string;
-  email: string;
-  rol: string;
-  fechaCreacion: string;
-}
+import { Admin, AdminService } from '../../services/admin.service';
 
 @Component({
   selector: 'app-admin',
@@ -30,28 +22,10 @@ export class AdminComponent implements OnInit {
   messageModalText: string = '';
   adminIdToDelete: string | null = null;
 
-  admins: Admin[] = [
-    {
-      id: 'AD1',
-      username: 'marco_admin',
-      password: '••••••••',
-      email: 'marco.admin@empresa.com',
-      rol: 'SuperAdmin',
-      fechaCreacion: '2024-01-15',
-    },
-    {
-      id: 'AD2',
-      username: 'luisa_g',
-      password: '••••••••',
-      email: 'luisa.g@empresa.com',
-      rol: 'Administrador',
-      fechaCreacion: '2024-03-01',
-    },
-  ];
-
+  admins: Admin[] = [];
   filteredAdmins: Admin[] = [];
 
-  constructor(private fb: FormBuilder) {}
+  constructor(private fb: FormBuilder, private adminService: AdminService) {}
 
   ngOnInit(): void {
     this.adminForm = this.fb.group({
@@ -59,7 +33,19 @@ export class AdminComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(6)]],
     });
 
-    this.filteredAdmins = [...this.admins];
+    this.cargarAdmins();
+  }
+
+  cargarAdmins(): void {
+    this.adminService.listarAdmins().subscribe({
+      next: (data) => {
+        this.admins = data;
+        this.filteredAdmins = [...this.admins];
+      },
+      error: (err) => {
+        console.error('Error al cargar administradores:', err);
+      },
+    });
   }
 
   filtrarAdmins() {
@@ -71,56 +57,53 @@ export class AdminComponent implements OnInit {
     this.filteredAdmins = this.admins.filter(
       (a) =>
         a.username.toLowerCase().includes(term) ||
-        a.email.toLowerCase().includes(term)
+        (a.nombre && a.nombre.toLowerCase().includes(term))
     );
-  }
-
-  private getNextId(): string {
-    const maxId = this.admins.reduce((max, a) => {
-      const num = parseInt(a.id.replace('AD', ''), 10);
-      return isNaN(num) ? max : Math.max(max, num);
-    }, 0);
-    return `AD${maxId + 1}`;
-  }
-
-  crearAdmin() {
-    this.adminForm.reset();
   }
 
   guardarAdmin() {
     if (this.adminForm.valid) {
       const nuevoAdmin: Admin = {
-        id: this.getNextId(),
         username: this.adminForm.value.username,
         password: this.adminForm.value.password,
-        email: `${this.adminForm.value.username}@empresa.com`,
-        rol: 'Administrador',
-        fechaCreacion: new Date().toISOString().split('T')[0],
+        nombre: this.adminForm.value.username,
       };
 
-      this.admins.push(nuevoAdmin);
-      this.filtrarAdmins();
-      this.showMessageModal('Administrador creado exitosamente.');
-      this.adminForm.reset();
+      this.adminService.crearAdmin(nuevoAdmin).subscribe({
+        next: (res) => {
+          this.showMessageModal('Administrador creado exitosamente.');
+          this.cargarAdmins();
+          this.adminForm.reset();
+        },
+        error: (err) => {
+          console.error('Error al crear administrador:', err);
+          this.showMessageModal('Error al crear administrador.');
+        },
+      });
     } else {
       this.adminForm.markAllAsTouched();
+    }
+  }
+
+  confirmarEliminar() {
+    if (this.adminIdToDelete) {
+      this.adminService.eliminarAdmin(this.adminIdToDelete).subscribe({
+        next: () => {
+          this.showMessageModal(`Administrador eliminado correctamente.`);
+          this.cargarAdmins();
+          this.adminIdToDelete = null;
+        },
+        error: (err) => {
+          console.error('Error al eliminar administrador:', err);
+          this.showMessageModal('Error al eliminar administrador.');
+        },
+      });
     }
   }
 
   eliminarAdmin(id: string) {
     this.adminIdToDelete = id;
     this.showConfirmModal();
-  }
-
-  confirmarEliminar() {
-    if (this.adminIdToDelete) {
-      this.admins = this.admins.filter((a) => a.id !== this.adminIdToDelete);
-      this.filtrarAdmins();
-      this.showMessageModal(
-        `Administrador con ID ${this.adminIdToDelete} eliminado.`
-      );
-      this.adminIdToDelete = null;
-    }
   }
 
   private showMessageModal(message: string): void {
