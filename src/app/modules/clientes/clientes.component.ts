@@ -47,7 +47,6 @@ export class ClientesComponent implements OnInit {
       next: (data) => {
         this.clientes = data;
         this.filteredClientes = [...this.clientes];
-        console.log('Clientes cargados:', data);
       },
       error: (err) => {
         console.error('Error al cargar clientes:', err);
@@ -77,24 +76,17 @@ export class ClientesComponent implements OnInit {
 
   guardarCliente() {
     if (this.clienteForm.valid) {
-      const nuevoCliente: Cliente = {
-        nombre: this.clienteForm.value.nombre,
-        apellido: this.clienteForm.value.apellido,
-        email: this.clienteForm.value.email,
-        telefono: this.clienteForm.value.telefono,
-        direccion: this.clienteForm.value.direccion,
-      };
+      const nuevoCliente: Cliente = { ...this.clienteForm.value };
 
       this.clientesService.crearCliente(nuevoCliente).subscribe({
-        next: (response) => {
+        next: (res) => {
           this.showMessageModal('Cliente creado exitosamente.');
-          console.log('Cliente creado:', response);
           this.cargarClientes();
           this.clienteForm.reset();
         },
         error: (err) => {
           console.error('Error al crear cliente:', err);
-          this.showMessageModal('Error al crear el cliente.');
+          this.showMessageModal('Error al crear cliente.');
         },
       });
     } else {
@@ -103,40 +95,9 @@ export class ClientesComponent implements OnInit {
   }
 
   editarCliente(id: string) {
-    const cliente = this.clientes.find((c) => c.id === id);
-    if (!cliente) return;
-
-    this.clienteForm.patchValue(cliente);
-    this.clienteIdToDelete = id;
-  }
-
-  actualizarCliente() {
-    if (this.clienteForm.valid && this.clienteIdToDelete) {
-      const clienteActualizado: Cliente = {
-        nombre: this.clienteForm.value.nombre,
-        apellido: this.clienteForm.value.apellido,
-        email: this.clienteForm.value.email,
-        telefono: this.clienteForm.value.telefono,
-        direccion: this.clienteForm.value.direccion,
-      };
-
-      this.clientesService
-        .actualizarCliente(this.clienteIdToDelete, clienteActualizado)
-        .subscribe({
-          next: () => {
-            this.showMessageModal('Cliente actualizado exitosamente.');
-            this.cargarClientes();
-            this.clienteForm.reset();
-            this.clienteIdToDelete = null;
-          },
-          error: (err) => {
-            console.error('Error al actualizar cliente:', err);
-            this.showMessageModal('Error al actualizar el cliente.');
-          },
-        });
-    } else {
-      this.clienteForm.markAllAsTouched();
-    }
+    this.showMessageModal(
+      `Función de edición pendiente para el cliente con ID: ${id}`
+    );
   }
 
   eliminarCliente(id: string) {
@@ -148,15 +109,13 @@ export class ClientesComponent implements OnInit {
     if (this.clienteIdToDelete) {
       this.clientesService.eliminarCliente(this.clienteIdToDelete).subscribe({
         next: () => {
-          this.showMessageModal(
-            `Cliente con ID ${this.clienteIdToDelete} eliminado.`
-          );
+          this.showMessageModal('Cliente eliminado correctamente.');
           this.cargarClientes();
           this.clienteIdToDelete = null;
         },
         error: (err) => {
           console.error('Error al eliminar cliente:', err);
-          this.showMessageModal('Error al eliminar el cliente.');
+          this.showMessageModal('Error al eliminar cliente.');
         },
       });
     }

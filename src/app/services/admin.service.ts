@@ -7,6 +7,9 @@ export interface Admin {
   nombre: string;
   username: string;
   password?: string;
+  email?: string;
+  rol?: string;
+  fechaCreacion?: string;
 }
 
 @Injectable({

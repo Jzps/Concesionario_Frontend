@@ -45,19 +45,19 @@
           <td>{{ cliente.nombre }}</td>
           <td>{{ cliente.apellido }}</td>
           <td>{{ cliente.dni }}</td>
-          <td>{{ cliente.correo }}</td>
+          <td>{{ cliente.email }}</td>
           <td>{{ cliente.telefono }}</td>
           <td>{{ cliente.direccion }}</td>
           <td class="text-center">
             <button
               class="btn btn-sm btn-info text-white me-2"
-              (click)="editarCliente(cliente.id)"
+              (click)="editarCliente(cliente.id!)"
             >
               <i class="fas fa-edit"></i> Editar
             </button>
             <button
               class="btn btn-sm btn-danger"
-              (click)="eliminarCliente(cliente.id)"
+              (click)="eliminarCliente(cliente.id!)"
             >
               <i class="fas fa-trash-alt"></i> Eliminar
             </button>

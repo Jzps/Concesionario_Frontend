@@ -36,6 +36,10 @@ export class AdminComponent implements OnInit {
     this.cargarAdmins();
   }
 
+  crearAdmin() {
+    this.guardarAdmin();
+  }
+
   cargarAdmins(): void {
     this.adminService.listarAdmins().subscribe({
       next: (data) => {

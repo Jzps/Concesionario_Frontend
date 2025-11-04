@@ -10,6 +10,8 @@ export interface Empleado {
   correo: string;
   telefono: string;
   cargo?: string;
+  salario?: number;
+  fecha_contratacion?: string;
 }
 
 export interface Vendedor {

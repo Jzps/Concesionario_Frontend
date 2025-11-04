@@ -42,6 +42,10 @@ export class AutosComponent implements OnInit {
     this.cargarAutos();
   }
 
+  crearAuto() {
+    this.autoForm.reset();
+  }
+
   get autosMostrados(): Auto[] {
     return this.todosLosAutos.filter(
       (a) => a.estado === (this.mostrandoVendidos ? 'VENDIDO' : 'DISPONIBLE')

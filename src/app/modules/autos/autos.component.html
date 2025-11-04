@@ -67,7 +67,6 @@
       <tbody>
         <tr *ngFor="let auto of autosMostrados">
           <td>{{ auto.id }}</td>
-          <td>{{ auto.name }}</td>
           <td>{{ auto.tipo }}</td>
           <td>{{ auto.marca }}</td>
           <td>{{ auto.modelo }}</td>
@@ -78,13 +77,13 @@
             <button
               *ngIf="auto.estado === 'DISPONIBLE'"
               class="btn btn-sm btn-success me-2"
-              (click)="venderAuto(auto.id)"
+              (click)="venderAuto(auto.id!)"
             >
               Vender
             </button>
             <button
               class="btn btn-sm btn-danger"
-              (click)="eliminarAuto(auto.id)"
+              (click)="eliminarAuto(auto.id!)"
             >
               Eliminar
             </button>

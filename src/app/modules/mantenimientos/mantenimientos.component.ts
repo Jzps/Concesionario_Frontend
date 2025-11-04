@@ -30,7 +30,9 @@ export class MantenimientosComponent implements OnInit {
   mantenimientoForm!: FormGroup;
   messageModalText: string = '';
   mantenimientoIdToDelete: string | null = null;
+
   mantenimientos: Mantenimiento[] = [];
+  filteredMantenimientos: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -54,6 +56,7 @@ export class MantenimientosComponent implements OnInit {
     this.mantenimientoService.listarMantenimientos().subscribe({
       next: (data) => {
         this.mantenimientos = data;
+        this.filteredMantenimientos = [...this.mantenimientos];
         console.log('Mantenimientos cargados:', data);
       },
       error: (err) => {
@@ -66,10 +69,11 @@ export class MantenimientosComponent implements OnInit {
   filtrarMantenimientos(): void {
     const term = this.filtro.toLowerCase().trim();
     if (!term) {
-      this.cargarMantenimientos();
+      this.filteredMantenimientos = [...this.mantenimientos];
       return;
     }
-    this.mantenimientos = this.mantenimientos.filter(
+
+    this.filteredMantenimientos = this.mantenimientos.filter(
       (m) =>
         m.id?.toLowerCase().includes(term) ||
         m.auto_id.toLowerCase().includes(term) ||
@@ -128,6 +132,10 @@ export class MantenimientosComponent implements OnInit {
         this.showMessageModal('Error al eliminar el mantenimiento.');
       },
     });
+  }
+
+  confirmarEliminar(): void {
+    console.log('Confirmar eliminar (por implementar)');
   }
 
   private showMessageModal(message: string): void {

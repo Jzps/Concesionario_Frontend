@@ -27,7 +27,9 @@ export class FacturasComponent implements OnInit {
   facturaForm!: FormGroup;
   messageModalText: string = '';
   facturaIdToDelete: string | null = null;
+
   facturas: Factura[] = [];
+  filteredFacturas: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -58,6 +60,7 @@ export class FacturasComponent implements OnInit {
     this.facturaService.listarFacturas().subscribe({
       next: (data) => {
         this.facturas = data;
+        this.filteredFacturas = [...this.facturas];
         console.log('Facturas cargadas:', data);
       },
       error: (err) => {
@@ -70,10 +73,10 @@ export class FacturasComponent implements OnInit {
   filtrarFacturas(): void {
     const term = this.filtro.toLowerCase().trim();
     if (!term) {
-      this.cargarFacturas();
+      this.filteredFacturas = [...this.facturas];
       return;
     }
-    this.facturas = this.facturas.filter(
+    this.filteredFacturas = this.facturas.filter(
       (f) =>
         f.id?.toString().includes(term) ||
         (f as any).observaciones?.toLowerCase().includes(term)
@@ -141,6 +144,10 @@ export class FacturasComponent implements OnInit {
         this.showMessageModal('Error al eliminar la factura.');
       },
     });
+  }
+
+  confirmarEliminar(): void {
+    console.log('Confirmar eliminar (por implementar)');
   }
 
   private showMessageModal(message: string): void {
