@@ -7,7 +7,7 @@ export interface Cliente {
   nombre: string;
   apellido: string;
   dni: string;
-  email: string;
+  correo: string;
   telefono: string;
   direccion: string;
 }

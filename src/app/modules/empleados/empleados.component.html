@@ -104,13 +104,13 @@
           <td class="text-center">
             <button
               class="btn btn-sm btn-info text-white me-2"
-              (click)="editarEmpleado(empleado.id)"
+              (click)="editarEmpleado(empleado.id!)"
             >
               <i class="fas fa-edit"></i> Editar
             </button>
             <button
               class="btn btn-sm btn-danger"
-              (click)="eliminarEmpleado(empleado.id)"
+              (click)="eliminarEmpleado(empleado.id!)"
             >
               <i class="fas fa-trash-alt"></i> Eliminar
             </button>

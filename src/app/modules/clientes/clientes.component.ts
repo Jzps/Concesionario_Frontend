@@ -34,7 +34,8 @@ export class ClientesComponent implements OnInit {
     this.clienteForm = this.fb.group({
       nombre: ['', [Validators.required]],
       apellido: ['', [Validators.required]],
-      email: ['', [Validators.required, Validators.email]],
+      dni: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+      correo: ['', [Validators.required, Validators.email]],
       telefono: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
       direccion: ['', [Validators.required]],
     });
@@ -57,6 +58,7 @@ export class ClientesComponent implements OnInit {
 
   filtrarClientes() {
     const term = this.filtro.toLowerCase().trim();
+
     if (!term) {
       this.filteredClientes = [...this.clientes];
       return;
@@ -66,7 +68,8 @@ export class ClientesComponent implements OnInit {
       (cliente) =>
         cliente.nombre.toLowerCase().includes(term) ||
         cliente.apellido.toLowerCase().includes(term) ||
-        cliente.email.toLowerCase().includes(term)
+        (cliente.correo && cliente.correo.toLowerCase().includes(term)) ||
+        (cliente.dni && cliente.dni.includes(term))
     );
   }
 
@@ -79,7 +82,7 @@ export class ClientesComponent implements OnInit {
       const nuevoCliente: Cliente = { ...this.clienteForm.value };
 
       this.clientesService.crearCliente(nuevoCliente).subscribe({
-        next: (res) => {
+        next: () => {
           this.showMessageModal('Cliente creado exitosamente.');
           this.cargarClientes();
           this.clienteForm.reset();
