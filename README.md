@@ -1,5 +1,3 @@
----
-
 # 🌐 Frontend del Concesionario de Autos (Angular)
 
 Este proyecto es el **frontend web del sistema de concesionario de autos**, desarrollado en **Angular 17**.
