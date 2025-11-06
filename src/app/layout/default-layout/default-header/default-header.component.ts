@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, ViewEncapsulation } from '@angular/core';
 import { Router } from '@angular/router';
 
-// Importaciones CoreUI
 import {
   ButtonModule,
   ContainerComponent,
@@ -24,7 +23,7 @@ import { IconDirective } from '@coreui/icons-angular';
 @Component({
   selector: 'app-default-header',
   standalone: true,
-  encapsulation: ViewEncapsulation.None, // 🔹 Esto permite aplicar los estilos globalmente
+  encapsulation: ViewEncapsulation.None,
   imports: [
     CommonModule,
     HeaderModule,
@@ -48,7 +47,6 @@ import { IconDirective } from '@coreui/icons-angular';
 export class DefaultHeaderComponent {
   constructor(private router: Router) {}
 
-  // Simulación de cierre de sesión
   logout(): void {
     console.log('Cierre de sesión...');
     this.router.navigate(['/login']);

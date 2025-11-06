@@ -1,20 +1,26 @@
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3 class="mb-0 fw-bold">Gestión de Concesionarios</h3>
-    <button class="btn btn-primary btn-lg" (click)="crearConcesionario()">
-      + Nuevo Concesionario 
+    <button
+      class="btn btn-primary btn-lg"
+      data-bs-toggle="modal"
+      data-bs-target="#concesionarioModal"
+      (click)="crearConcesionario()"
+    >
+      <i class="fas fa-building me-2"></i>+ Nuevo Concesionario
     </button>
   </div>
 
-  <div class="input-group mb-4" style="max-width: 350px;">
+  <div class="input-group mb-4" style="max-width: 350px">
     <span class="input-group-text bg-light border-end-0">
       <i class="fas fa-search"></i>
     </span>
     <input
       type="text"
       class="form-control border-start-0 ps-0"
-      placeholder="Buscar concesionario por nombre o ciudad"
+      placeholder="Buscar concesionario por nombre o dirección"
       [(ngModel)]="filtro"
+      (input)="filtrarConcesionarios()"
     />
   </div>
 
@@ -24,31 +30,200 @@
         <tr>
           <th>ID</th>
           <th>Nombre</th>
-          <th>Ciudad</th>
           <th>Dirección</th>
           <th>Teléfono</th>
-          <th>Email</th>
           <th class="text-center">Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let concesionario of concesionarios">
+        <tr *ngFor="let concesionario of filteredConcesionarios">
           <td>{{ concesionario.id }}</td>
           <td>{{ concesionario.nombre }}</td>
-          <td>{{ concesionario.ciudad }}</td>
           <td>{{ concesionario.direccion }}</td>
           <td>{{ concesionario.telefono }}</td>
-          <td>{{ concesionario.email }}</td>
           <td class="text-center">
-            <button class="btn btn-sm btn-info text-white me-2" (click)="editarConcesionario(concesionario.id)">
-              Editar
+            <button
+              class="btn btn-sm btn-info text-white me-2"
+              (click)="editarConcesionario(concesionario.id!)"
+            >
+              <i class="fas fa-edit"></i> Editar
             </button>
-            <button class="btn btn-sm btn-danger" (click)="eliminarConcesionario(concesionario.id)">
-              Eliminar
+            <button
+              class="btn btn-sm btn-danger"
+              (click)="eliminarConcesionario(concesionario.id!)"
+            >
+              <i class="fas fa-trash-alt"></i> Eliminar
             </button>
+          </td>
+        </tr>
+        <tr *ngIf="filteredConcesionarios.length === 0">
+          <td colspan="5" class="text-center py-4 text-muted">
+            No se encontraron concesionarios.
           </td>
         </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="concesionarioModal"
+  tabindex="-1"
+  aria-labelledby="concesionarioModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="concesionarioModalLabel">
+          <i class="fas fa-building me-2"></i> Crear Nuevo Concesionario
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <form [formGroup]="concesionarioForm" (ngSubmit)="guardarConcesionario()">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nombre</label>
+            <input
+              type="text"
+              class="form-control"
+              formControlName="nombre"
+              placeholder="Nombre del concesionario"
+            />
+            <div
+              *ngIf="
+                concesionarioForm.get('nombre')?.invalid &&
+                concesionarioForm.get('nombre')?.touched
+              "
+              class="text-danger mt-1"
+            >
+              El nombre es obligatorio.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Dirección</label>
+            <input
+              type="text"
+              class="form-control"
+              formControlName="direccion"
+              placeholder="Dirección del concesionario"
+            />
+            <div
+              *ngIf="
+                concesionarioForm.get('direccion')?.invalid &&
+                concesionarioForm.get('direccion')?.touched
+              "
+              class="text-danger mt-1"
+            >
+              La dirección es obligatoria.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Teléfono</label>
+            <input
+              type="tel"
+              class="form-control"
+              formControlName="telefono"
+              placeholder="Teléfono (10 dígitos)"
+            />
+            <div
+              *ngIf="
+                concesionarioForm.get('telefono')?.invalid &&
+                concesionarioForm.get('telefono')?.touched
+              "
+              class="text-danger mt-1"
+            >
+              El teléfono debe tener 10 dígitos.
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="concesionarioForm.invalid"
+          >
+            <i class="fas fa-save me-2"></i> Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="messageModal"
+  tabindex="-1"
+  aria-labelledby="messageModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Mensaje</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">{{ messageModalText }}</div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" data-bs-dismiss="modal">Aceptar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="confirmModal"
+  tabindex="-1"
+  aria-labelledby="confirmModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Confirmar Eliminación</h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        ¿Estás seguro de que deseas eliminar este concesionario?
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button
+          class="btn btn-danger"
+          data-bs-dismiss="modal"
+          (click)="confirmarEliminar()"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
   </div>
 </div>

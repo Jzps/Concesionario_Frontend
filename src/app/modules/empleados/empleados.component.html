@@ -1,51 +1,80 @@
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3 class="mb-0 fw-bold">Gestión de Empleados</h3>
-    
+
     <div class="dropdown">
-      <button class="btn btn-primary btn-lg dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        + Nuevo Empleado 
+      <button
+        class="btn btn-primary btn-lg dropdown-toggle"
+        type="button"
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+      >
+        <i class="fas fa-user-plus me-2"></i>+ Nuevo Empleado
       </button>
       <ul class="dropdown-menu">
-        <li><a class="dropdown-item" (click)="registrarEmpleado('GENERAL')">General</a></li>
-        <li><a class="dropdown-item" (click)="registrarEmpleado('VENDEDOR')">Vendedor</a></li>
-        <li><a class="dropdown-item" (click)="registrarEmpleado('TECNICO')">Técnico</a></li>
+        <li>
+          <a class="dropdown-item" (click)="registrarEmpleado('GENERAL')">
+            General / Administrativo
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" (click)="registrarEmpleado('VENDEDOR')">
+            Vendedor
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" (click)="registrarEmpleado('TECNICO')">
+            Técnico
+          </a>
+        </li>
       </ul>
     </div>
   </div>
 
-  <div class="input-group mb-4" style="max-width: 350px;">
-    <span class="input-group-text bg-light border-end-0">
-      <i class="fas fa-search"></i>
-    </span>
-    <input
-      type="text"
-      class="form-control border-start-0 ps-0"
-      placeholder="Buscar empleado por DNI o Nombre"
-      [(ngModel)]="filtro"
-    />
-  </div>
+  <div class="d-flex justify-content-between mb-4">
+    <div class="input-group" style="max-width: 350px">
+      <span class="input-group-text bg-light border-end-0">
+        <i class="fas fa-search"></i>
+      </span>
+      <input
+        type="text"
+        class="form-control border-start-0 ps-0"
+        placeholder="Buscar empleado por DNI o Nombre"
+        [(ngModel)]="filtro"
+        (input)="(empleadosMostrados)"
+      />
+    </div>
 
-  <ul class="nav nav-pills mb-3">
-    <li class="nav-item">
-      <a class="nav-link" 
-         [class.active]="vistaActual === 'TODOS'" 
-         (click)="cambiarVista('TODOS')"
-         style="cursor: pointer;">Todos los Empleados</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" 
-         [class.active]="vistaActual === 'VENDEDORES'" 
-         (click)="cambiarVista('VENDEDORES')"
-         style="cursor: pointer;">Vendedores</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" 
-         [class.active]="vistaActual === 'TECNICOS'" 
-         (click)="cambiarVista('TECNICOS')"
-         style="cursor: pointer;">Técnicos</a>
-    </li>
-  </ul>
+    <ul class="nav nav-pills">
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          [class.active]="vistaActual === 'TODOS'"
+          (click)="cambiarVista('TODOS')"
+          style="cursor: pointer"
+          >Todos los Empleados</a
+        >
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          [class.active]="vistaActual === 'VENDEDORES'"
+          (click)="cambiarVista('VENDEDORES')"
+          style="cursor: pointer"
+          >Vendedores</a
+        >
+      </li>
+      <li class="nav-item">
+        <a
+          class="nav-link"
+          [class.active]="vistaActual === 'TECNICOS'"
+          (click)="cambiarVista('TECNICOS')"
+          style="cursor: pointer"
+          >Técnicos</a
+        >
+      </li>
+    </ul>
+  </div>
 
   <div class="table-responsive">
     <table class="table table-striped table-hover align-middle shadow-sm">
@@ -58,6 +87,7 @@
           <th>Cargo</th>
           <th>Teléfono</th>
           <th>Salario</th>
+          <th>Contratación</th>
           <th class="text-center">Acciones</th>
         </tr>
       </thead>
@@ -69,17 +99,208 @@
           <td>{{ empleado.dni }}</td>
           <td>{{ empleado.cargo }}</td>
           <td>{{ empleado.telefono }}</td>
-          <td>${{ empleado.salario | number:'1.0-2' }}</td>
+          <td>${{ empleado.salario | number : "1.0-2" }}</td>
+          <td>{{ empleado.fecha_contratacion }}</td>
           <td class="text-center">
-            <button class="btn btn-sm btn-info text-white me-2" (click)="editarEmpleado(empleado.id)">
-              Editar
+            <button
+              class="btn btn-sm btn-info text-white me-2"
+              (click)="editarEmpleado(empleado.id!)"
+            >
+              <i class="fas fa-edit"></i> Editar
             </button>
-            <button class="btn btn-sm btn-danger" (click)="eliminarEmpleado(empleado.id)">
-              Eliminar
+            <button
+              class="btn btn-sm btn-danger"
+              (click)="eliminarEmpleado(empleado.id!)"
+            >
+              <i class="fas fa-trash-alt"></i> Eliminar
             </button>
           </td>
         </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="empleadoModal"
+  tabindex="-1"
+  aria-labelledby="empleadoModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="empleadoModalLabel">
+          <i class="fas fa-user-plus me-2"></i> {{ modalTitle }}
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <form [formGroup]="empleadoForm" (ngSubmit)="guardarEmpleado()">
+        <div class="modal-body row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="nombre" class="form-label">Nombre</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="nombre"
+                placeholder="Nombre del empleado"
+              />
+              <div
+                *ngIf="
+                  empleadoForm.get('nombre')?.invalid &&
+                  empleadoForm.get('nombre')?.touched
+                "
+                class="text-danger mt-1"
+              >
+                El nombre es obligatorio.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="apellido" class="form-label">Apellido</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="apellido"
+                placeholder="Apellido del empleado"
+              />
+              <div
+                *ngIf="
+                  empleadoForm.get('apellido')?.invalid &&
+                  empleadoForm.get('apellido')?.touched
+                "
+                class="text-danger mt-1"
+              >
+                El apellido es obligatorio.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="dni" class="form-label">DNI</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="dni"
+                placeholder="Documento de Identidad (10 dígitos)"
+              />
+              <div
+                *ngIf="
+                  empleadoForm.get('dni')?.invalid &&
+                  empleadoForm.get('dni')?.touched
+                "
+                class="text-danger mt-1"
+              >
+                El DNI es obligatorio y debe tener 10 dígitos.
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="correo" class="form-label">Correo Electrónico</label>
+              <input
+                type="email"
+                class="form-control"
+                formControlName="correo"
+                placeholder="ejemplo@correo.com"
+              />
+              <div
+                *ngIf="
+                  empleadoForm.get('correo')?.invalid &&
+                  empleadoForm.get('correo')?.touched
+                "
+                class="text-danger mt-1"
+              >
+                El correo es obligatorio y debe ser válido.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="telefono" class="form-label">Teléfono</label>
+              <input
+                type="tel"
+                class="form-control"
+                formControlName="telefono"
+                placeholder="Número de teléfono (10 dígitos)"
+              />
+              <div
+                *ngIf="
+                  empleadoForm.get('telefono')?.invalid &&
+                  empleadoForm.get('telefono')?.touched
+                "
+                class="text-danger mt-1"
+              >
+                El teléfono es obligatorio y debe tener 10 dígitos.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="fecha_contratacion" class="form-label"
+                >Fecha de Contratación</label
+              >
+              <input
+                type="date"
+                class="form-control"
+                formControlName="fecha_contratacion"
+              />
+              <div
+                *ngIf="
+                  empleadoForm.get('fecha_contratacion')?.invalid &&
+                  empleadoForm.get('fecha_contratacion')?.touched
+                "
+                class="text-danger mt-1"
+              >
+                La fecha de contratación es obligatoria.
+              </div>
+            </div>
+
+            <div class="mb-3" *ngIf="formTipo !== 'GENERAL'">
+              <label for="salario" class="form-label">Salario Base (COP)</label>
+              <input
+                type="number"
+                class="form-control"
+                formControlName="salario"
+                placeholder="Salario base"
+                min="100000"
+              />
+              <div
+                *ngIf="
+                  empleadoForm.get('salario')?.invalid &&
+                  empleadoForm.get('salario')?.touched
+                "
+                class="text-danger mt-1"
+              >
+                El salario es obligatorio y debe ser un valor positivo.
+              </div>
+            </div>
+
+            <input type="hidden" formControlName="concesionario_id" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="empleadoForm.invalid"
+          >
+            <i class="fas fa-save me-2"></i>Guardar Empleado
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>

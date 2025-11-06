@@ -1,51 +1,61 @@
 <div class="dashboard-portal-container">
-    <div class="welcome-banner">
-        <h1 class="welcome-title">
-            ¡BIENVENIDO al Sistema <span class="text-primary-green">Concesionario de Autos!</span>
-        </h1>
-        <p class="welcome-subtitle">
-            Plataforma de gestión centralizada desarrollada con **FastAPI (Python)**, **MySQL/PostgreSQL** y **Angular**. Administra el flujo completo de ventas, mantenimiento y recursos humanos.
-        </p>
-        
-        <button 
-            cButton 
-            class="btn-docs-access"
-            (click)="goToSwagger()"
+  <div class="welcome-banner">
+    <h1 class="welcome-title">
+      ¡BIENVENIDO al Sistema
+      <span class="text-primary-green">Concesionario de Autos!</span>
+    </h1>
+    <p class="welcome-subtitle">
+      Plataforma de gestión centralizada desarrollada con **FastAPI (Python)**,
+      **MySQL/PostgreSQL** y **Angular**. Administra el flujo completo de
+      ventas, mantenimiento y recursos humanos.
+    </p>
+
+    <button
+      cButton
+      class="btn-docs-access"
+      (click)="goToSwagger()"
+      role="button"
+    >
+      <i class="fas fa-file-alt me-2"></i> Documentación (Swagger UI)
+    </button>
+  </div>
+
+  <c-row class="module-grid g-4">
+    <c-col *ngFor="let module of moduleCards" xs="12" md="6" lg="4">
+      <c-card class="module-card shadow-sm">
+        <div class="card-icon-wrapper">
+          <i
+            [class]="module.icon"
+            class="module-icon"
+            [ngClass]="'text-' + module.color"
+          ></i>
+        </div>
+
+        <div class="card-body-content">
+          <h5 class="card-title">{{ module.title }}</h5>
+          <p class="card-description">{{ module.description }}</p>
+        </div>
+
+        <div class="card-footer-actions">
+          <div class="api-tags-container mb-3">
+            <span
+              class="api-tag"
+              *ngFor="let endpoint of module.apiEndpoints"
+              >{{ endpoint }}</span
+            >
+          </div>
+
+          <button
+            cButton
+            [routerLink]="module.link"
+            class="btn-access"
+            [ngClass]="'btn-outline-' + module.color"
             role="button"
-        >
-            <i class="fas fa-file-alt me-2"></i> Documentación (Swagger UI)
-        </button>
-    </div>
-
-    <c-row class="module-grid g-4">
-        <c-col *ngFor="let module of moduleCards" xs="12" md="6" lg="4">
-            <c-card class="module-card shadow-sm">
-                
-                <div class="card-icon-wrapper">
-                    <i [class]="module.icon" class="module-icon" [ngClass]="'text-' + module.color"></i>
-                </div>
-                
-                <div class="card-body-content">
-                    <h5 class="card-title">{{ module.title }}</h5>
-                    <p class="card-description">{{ module.description }}</p>
-                </div>
-
-                <div class="card-footer-actions">
-                    <div class="api-tags-container mb-3">
-                        <span class="api-tag" *ngFor="let endpoint of module.apiEndpoints">{{ endpoint }}</span>
-                    </div>
-
-                    <button 
-                        cButton 
-                        [routerLink]="module.link"
-                        class="btn-access"
-                        [ngClass]="'btn-outline-' + module.color"
-                        role="button"
-                    >
-                        <i class="fas fa-external-link-alt me-2"></i> Ir al Módulo
-                    </button>
-                </div>
-            </c-card>
-        </c-col>
-    </c-row>
+          >
+            <i class="fas fa-external-link-alt me-2"></i> Ir al Módulo
+          </button>
+        </div>
+      </c-card>
+    </c-col>
+  </c-row>
 </div>

@@ -1,3 +1,7 @@
+import {
+  provideHttpClient,
+  withInterceptorsFromDi,
+} from '@angular/common/http';
 import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import {
@@ -6,7 +10,7 @@ import {
   withHashLocation,
   withInMemoryScrolling,
   withRouterConfig,
-  withViewTransitions
+  withViewTransitions,
 } from '@angular/router';
 
 import { DropdownModule, SidebarModule } from '@coreui/angular';
@@ -15,20 +19,25 @@ import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes,
+    provideRouter(
+      routes,
       withRouterConfig({
-        onSameUrlNavigation: 'reload'
+        onSameUrlNavigation: 'reload',
       }),
       withInMemoryScrolling({
         scrollPositionRestoration: 'top',
-        anchorScrolling: 'enabled'
+        anchorScrolling: 'enabled',
       }),
       withEnabledBlockingInitialNavigation(),
       withViewTransitions(),
       withHashLocation()
     ),
+
     importProvidersFrom(SidebarModule, DropdownModule),
+
+    provideHttpClient(withInterceptorsFromDi()),
+
     IconSetService,
-    provideAnimationsAsync()
-  ]
+    provideAnimationsAsync(),
+  ],
 };

@@ -1,11 +1,9 @@
 :host ::ng-deep {
-  /* === VARIABLES === */
   $header-bg: #ffffff;
   $primary-blue: #4c63ff;
   $header-shadow: rgba(0, 0, 0, 0.1);
   $text-muted: #6c757d;
 
-  /* === HEADER PRINCIPAL === */
   .header-concesionario {
     background-color: $header-bg;
     border-bottom: 1px solid #dee2e6;
@@ -33,8 +31,7 @@
     }
   }
 
-  /* === BOTONES DE ICONOS === */
-  button[cbutton][variant='ghost'],
+  button[cbutton][variant="ghost"],
   .btn-light {
     color: #495057 !important;
     border-radius: 50%;
@@ -46,7 +43,6 @@
     }
   }
 
-  /* === PERFIL DE USUARIO === */
   .dropdown-toggle {
     border-radius: 10px;
     transition: all 0.3s ease;
@@ -67,7 +63,6 @@
     }
   }
 
-  /* === MENÚ DESPLEGABLE === */
   .dropdown-menu {
     border-radius: 10px !important;
     overflow: hidden;
@@ -95,7 +90,6 @@
     }
   }
 
-  /* === BREADCRUMBS (opcional) === */
   app-breadcrumbs {
     padding-top: 0.5rem;
     display: block;

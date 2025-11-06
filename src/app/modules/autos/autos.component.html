@@ -1,40 +1,52 @@
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3 class="mb-0 fw-bold">Gestión de Autos</h3>
-    
+
     <div>
-      <button class="btn btn-primary btn-lg me-2" (click)="comprarAuto()">
-        <i class="fas fa-plus-circle"></i> Comprar Auto
+      <button
+        class="btn btn-primary btn-lg me-2"
+        data-bs-toggle="modal"
+        data-bs-target="#autoModal"
+        (click)="crearAuto()"
+      >
+        <i class="fas fa-plus-circle me-2"></i>Agregar Auto
       </button>
 
-      <button 
-        class="btn btn-secondary btn-lg" 
-        [ngClass]="{'btn-success': mostrandoVendidos, 'btn-secondary': !mostrandoVendidos}" 
+      <button
+        class="btn btn-secondary btn-lg"
+        [ngClass]="{ 'btn-success': mostrandoVendidos }"
         (click)="alternarVista()"
       >
-        @if (mostrandoVendidos) {
-            <i class="fas fa-car-side"></i> Autos Disponibles
-        } @else {
-            <i class="fas fa-handshake"></i> Autos Vendidos
-        }
+        <i
+          class="fas"
+          [ngClass]="{
+            'fa-car-side': mostrandoVendidos,
+            'fa-handshake': !mostrandoVendidos
+          }"
+        ></i>
+        {{ mostrandoVendidos ? "Autos Disponibles" : "Autos Vendidos" }}
       </button>
     </div>
   </div>
 
-  <div class="input-group mb-4" style="max-width: 350px;">
+  <div class="input-group mb-4" style="max-width: 350px">
     <span class="input-group-text bg-light border-end-0">
       <i class="fas fa-search"></i>
     </span>
     <input
       type="text"
       class="form-control border-start-0 ps-0"
-      placeholder="Buscar auto por VIN o Placa"
+      placeholder="Buscar auto por marca o modelo"
       [(ngModel)]="filtro"
     />
   </div>
 
   <h5 class="mb-3 text-muted">
-    {{ mostrandoVendidos ? 'Inventario de Autos Vendidos' : 'Inventario de Autos Disponibles' }}
+    {{
+      mostrandoVendidos
+        ? "Inventario de Autos Vendidos"
+        : "Inventario de Autos Disponibles"
+    }}
   </h5>
 
   <div class="table-responsive">
@@ -42,41 +54,188 @@
       <thead class="table-dark">
         <tr>
           <th>ID</th>
+          <th>Nombre</th>
+          <th>Tipo</th>
           <th>Marca</th>
           <th>Modelo</th>
-          <th>Placa</th>
-          <th>VIN</th>
-          <th>Año</th>
-          <th>Color</th>
+          <th>Precio</th>
+          <th>Kilometraje</th>
+          <th>Autonomía</th>
           <th class="text-center">Acciones</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let auto of autosMostrados">
           <td>{{ auto.id }}</td>
+          <td>{{ auto.tipo }}</td>
           <td>{{ auto.marca }}</td>
           <td>{{ auto.modelo }}</td>
-          <td>{{ auto.placa }}</td>
-          <td>{{ auto.vin }}</td>
-          <td>{{ auto.anio }}</td>
-          <td>{{ auto.color }}</td>
+          <td>{{ auto.precio | currency : "USD" : "symbol" : "1.0-0" }}</td>
+          <td>{{ auto.kilometraje || "—" }}</td>
+          <td>{{ auto.autonomia || "—" }}</td>
           <td class="text-center">
-            
-            @if (auto.estado === 'DISPONIBLE') {
-                <button class="btn btn-sm btn-success me-2" (click)="venderAuto(auto.id)">
-                    Vender
-                </button>
-                <button class="btn btn-sm btn-info text-white me-2" (click)="editarAuto(auto.id)">
-                    Editar
-                </button>
-            }
-            
-            <button class="btn btn-sm btn-danger" (click)="eliminarAuto(auto.id)">
+            <button
+              *ngIf="auto.estado === 'DISPONIBLE'"
+              class="btn btn-sm btn-success me-2"
+              (click)="venderAuto(auto.id!)"
+            >
+              Vender
+            </button>
+            <button
+              class="btn btn-sm btn-danger"
+              (click)="eliminarAuto(auto.id!)"
+            >
               Eliminar
             </button>
           </td>
         </tr>
+        <tr *ngIf="autosMostrados.length === 0">
+          <td colspan="9" class="text-center py-4 text-muted">
+            No hay autos en esta categoría.
+          </td>
+        </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="autoModal"
+  tabindex="-1"
+  aria-labelledby="autoModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="autoModalLabel">
+          <i class="fas fa-car me-2"></i>Agregar Nuevo Auto
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+
+      <form [formGroup]="autoForm" (ngSubmit)="guardarAuto()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nombre</label>
+              <input type="text" class="form-control" formControlName="name" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Tipo *</label>
+              <input type="text" class="form-control" formControlName="tipo" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Marca *</label>
+              <input type="text" class="form-control" formControlName="marca" />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Modelo *</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="modelo"
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Precio *</label>
+              <input
+                type="number"
+                class="form-control"
+                formControlName="precio"
+                min="0"
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Kilometraje</label>
+              <input
+                type="number"
+                class="form-control"
+                formControlName="kilometraje"
+                min="0"
+              />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Autonomía</label>
+              <input
+                type="number"
+                class="form-control"
+                formControlName="autonomia"
+                min="0"
+              />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Descripción</label>
+              <textarea
+                class="form-control"
+                rows="2"
+                formControlName="description"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="autoForm.invalid"
+          >
+            <i class="fas fa-save me-2"></i>Guardar Auto
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="messageModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Mensaje</h5>
+      </div>
+      <div class="modal-body">{{ messageModalText }}</div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" data-bs-dismiss="modal">Aceptar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Confirmar Eliminación</h5>
+      </div>
+      <div class="modal-body">
+        ¿Seguro que deseas eliminar este auto del inventario?
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button
+          class="btn btn-danger"
+          data-bs-dismiss="modal"
+          (click)="confirmarEliminar()"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
   </div>
 </div>
