@@ -8,7 +8,11 @@ export interface Factura {
   cliente_id: string;
   empleado_id: string;
   auto_id: string;
+  precio_carro_base: number;
+  costo_mantenimiento: number;
+  descuento: number;
   total: number;
+  observaciones?: string;
 }
 
 @Injectable({

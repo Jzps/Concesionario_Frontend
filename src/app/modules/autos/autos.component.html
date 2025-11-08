@@ -17,28 +17,9 @@
         [ngClass]="{ 'btn-success': mostrandoVendidos }"
         (click)="alternarVista()"
       >
-        <i
-          class="fas"
-          [ngClass]="{
-            'fa-car-side': mostrandoVendidos,
-            'fa-handshake': !mostrandoVendidos
-          }"
-        ></i>
         {{ mostrandoVendidos ? "Autos Disponibles" : "Autos Vendidos" }}
       </button>
     </div>
-  </div>
-
-  <div class="input-group mb-4" style="max-width: 350px">
-    <span class="input-group-text bg-light border-end-0">
-      <i class="fas fa-search"></i>
-    </span>
-    <input
-      type="text"
-      class="form-control border-start-0 ps-0"
-      placeholder="Buscar auto por marca o modelo"
-      [(ngModel)]="filtro"
-    />
   </div>
 
   <h5 class="mb-3 text-muted">
@@ -54,7 +35,6 @@
       <thead class="table-dark">
         <tr>
           <th>ID</th>
-          <th>Nombre</th>
           <th>Tipo</th>
           <th>Marca</th>
           <th>Modelo</th>
@@ -64,6 +44,7 @@
           <th class="text-center">Acciones</th>
         </tr>
       </thead>
+
       <tbody>
         <tr *ngFor="let auto of autosMostrados">
           <td>{{ auto.id }}</td>
@@ -71,8 +52,10 @@
           <td>{{ auto.marca }}</td>
           <td>{{ auto.modelo }}</td>
           <td>{{ auto.precio | currency : "USD" : "symbol" : "1.0-0" }}</td>
-          <td>{{ auto.kilometraje || "—" }}</td>
-          <td>{{ auto.autonomia || "—" }}</td>
+
+          <td>{{ auto.tipo == "usado" ? auto.kilometraje + " km" : "—" }}</td>
+          <td>{{ auto.tipo == "electrico" ? auto.autonomia + " km" : "—" }}</td>
+
           <td class="text-center">
             <button
               *ngIf="auto.estado === 'DISPONIBLE'"
@@ -81,6 +64,16 @@
             >
               Vender
             </button>
+
+            <button
+              class="btn btn-sm btn-warning me-2"
+              data-bs-toggle="modal"
+              data-bs-target="#autoModal"
+              (click)="editarAuto(auto)"
+            >
+              Editar
+            </button>
+
             <button
               class="btn btn-sm btn-danger"
               (click)="eliminarAuto(auto.id!)"
@@ -89,8 +82,9 @@
             </button>
           </td>
         </tr>
+
         <tr *ngIf="autosMostrados.length === 0">
-          <td colspan="9" class="text-center py-4 text-muted">
+          <td colspan="8" class="text-center py-4 text-muted">
             No hay autos en esta categoría.
           </td>
         </tr>
@@ -99,18 +93,12 @@
   </div>
 </div>
 
-<div
-  class="modal fade"
-  id="autoModal"
-  tabindex="-1"
-  aria-labelledby="autoModalLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="autoModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title" id="autoModalLabel">
-          <i class="fas fa-car me-2"></i>Agregar Nuevo Auto
+        <h5 class="modal-title">
+          {{ autoEditandoId ? "Editar Auto" : "Registrar Auto" }}
         </h5>
         <button
           type="button"
@@ -123,17 +111,19 @@
         <div class="modal-body">
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label">Nombre</label>
-              <input type="text" class="form-control" formControlName="name" />
-            </div>
-            <div class="col-md-6">
               <label class="form-label">Tipo *</label>
-              <input type="text" class="form-control" formControlName="tipo" />
+              <select class="form-select" formControlName="tipo">
+                <option value="nuevo">Nuevo</option>
+                <option value="usado">Usado</option>
+                <option value="electrico">Eléctrico</option>
+              </select>
             </div>
+
             <div class="col-md-6">
               <label class="form-label">Marca *</label>
               <input type="text" class="form-control" formControlName="marca" />
             </div>
+
             <div class="col-md-6">
               <label class="form-label">Modelo *</label>
               <input
@@ -142,17 +132,19 @@
                 formControlName="modelo"
               />
             </div>
+
             <div class="col-md-6">
               <label class="form-label">Precio *</label>
               <input
                 type="number"
                 class="form-control"
                 formControlName="precio"
-                min="0"
+                min="1"
               />
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Kilometraje</label>
+
+            <div class="col-md-6" *ngIf="autoForm.value.tipo === 'usado'">
+              <label class="form-label">Kilometraje *</label>
               <input
                 type="number"
                 class="form-control"
@@ -160,22 +152,15 @@
                 min="0"
               />
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Autonomía</label>
+
+            <div class="col-md-6" *ngIf="autoForm.value.tipo === 'electrico'">
+              <label class="form-label">Autonomía *</label>
               <input
                 type="number"
                 class="form-control"
                 formControlName="autonomia"
                 min="0"
               />
-            </div>
-            <div class="col-12">
-              <label class="form-label">Descripción</label>
-              <textarea
-                class="form-control"
-                rows="2"
-                formControlName="description"
-              ></textarea>
             </div>
           </div>
         </div>
@@ -193,7 +178,7 @@
             class="btn btn-primary"
             [disabled]="autoForm.invalid"
           >
-            <i class="fas fa-save me-2"></i>Guardar Auto
+            {{ autoEditandoId ? "Actualizar" : "Guardar" }}
           </button>
         </div>
       </form>
@@ -221,9 +206,7 @@
       <div class="modal-header bg-danger text-white">
         <h5 class="modal-title">Confirmar Eliminación</h5>
       </div>
-      <div class="modal-body">
-        ¿Seguro que deseas eliminar este auto del inventario?
-      </div>
+      <div class="modal-body">¿Seguro que deseas eliminar este auto?</div>
       <div class="modal-footer">
         <button class="btn btn-secondary" data-bs-dismiss="modal">
           Cancelar

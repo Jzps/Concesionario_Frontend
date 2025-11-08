@@ -1,3 +1,4 @@
+import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
@@ -7,9 +8,9 @@ export interface Auto {
   marca: string;
   modelo: string;
   precio: number;
+  tipo: string;
   kilometraje?: number | null;
   autonomia?: number | null;
-  tipo: 'nuevo' | 'usado' | 'electrico';
   estado?: string;
 }
 
@@ -25,8 +26,20 @@ export class AutosService {
     return this.apiService.get<Auto[]>(this.endpoint);
   }
 
-  obtenerAutoPorId(id: string): Observable<Auto> {
-    return this.apiService.get<Auto>(`${this.endpoint}/${id}`);
+  listarAutosVendidos(): Observable<Auto[]> {
+    return this.apiService.get<Auto[]>(`${this.endpoint}/vendidos`);
+  }
+
+  venderAuto(id: string): Observable<any> {
+    return this.apiService.post<any>(`${this.endpoint}/vender/${id}`, {});
+  }
+
+  eliminarAuto(id: string): Observable<any> {
+    return this.apiService.delete<any>(`${this.endpoint}/${id}`);
+  }
+
+  actualizarAuto(id: string, auto: any): Observable<any> {
+    return this.apiService.put<any>(`${this.endpoint}/${id}`, auto);
   }
 
   comprarAuto(
@@ -37,28 +50,20 @@ export class AutosService {
     kilometraje?: number | null,
     autonomia?: number | null
   ): Observable<any> {
-    const params: any = { tipo, marca, modelo, precio };
-    if (kilometraje !== undefined && kilometraje !== null)
-      params.kilometraje = kilometraje;
-    if (autonomia !== undefined && autonomia !== null)
-      params.autonomia = autonomia;
+    let params = new HttpParams()
+      .set('tipo', tipo)
+      .set('marca', marca)
+      .set('modelo', modelo)
+      .set('precio', precio);
 
-    return this.apiService.post<any>(`${this.endpoint}/comprar`, params);
-  }
+    if (kilometraje !== null && kilometraje !== undefined) {
+      params = params.set('kilometraje', kilometraje);
+    }
 
-  venderAuto(id: string): Observable<any> {
-    return this.apiService.post<any>(`${this.endpoint}/vender/${id}`, {});
-  }
+    if (autonomia !== null && autonomia !== undefined) {
+      params = params.set('autonomia', autonomia);
+    }
 
-  listarAutosVendidos(): Observable<Auto[]> {
-    return this.apiService.get<Auto[]>(`${this.endpoint}/vendidos`);
-  }
-
-  actualizarAuto(id: string, auto: Auto): Observable<Auto> {
-    return this.apiService.put<Auto>(`${this.endpoint}/${id}`, auto);
-  }
-
-  eliminarAuto(id: string): Observable<any> {
-    return this.apiService.delete<any>(`${this.endpoint}/${id}`);
+    return this.apiService.post<any>(`${this.endpoint}/comprar`, {}, params);
   }
 }

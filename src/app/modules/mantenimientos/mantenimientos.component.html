@@ -18,7 +18,7 @@
     <input
       type="text"
       class="form-control border-start-0 ps-0"
-      placeholder="Buscar por ID o Placa del auto"
+      placeholder="Buscar por ID o Auto"
       [(ngModel)]="filtro"
       (input)="filtrarMantenimientos()"
     />
@@ -37,6 +37,7 @@
           <th class="text-center">Acciones</th>
         </tr>
       </thead>
+
       <tbody>
         <tr *ngFor="let mantenimiento of filteredMantenimientos">
           <td>{{ mantenimiento.id }}</td>
@@ -52,15 +53,17 @@
               <span class="text-muted">Pendiente</span>
             </ng-template>
           </td>
+
           <td class="text-center">
             <button
               class="btn btn-sm btn-danger"
-              (click)="eliminarMantenimiento(mantenimiento.id)"
+              (click)="pedirConfirmacion(mantenimiento.id!)"
             >
               <i class="fas fa-trash-alt"></i> Eliminar
             </button>
           </td>
         </tr>
+
         <tr *ngIf="filteredMantenimientos.length === 0">
           <td colspan="7" class="text-center py-4 text-muted">
             No se encontraron registros de mantenimiento.
@@ -88,9 +91,9 @@
           type="button"
           class="btn-close btn-close-white"
           data-bs-dismiss="modal"
-          aria-label="Close"
         ></button>
       </div>
+
       <form [formGroup]="mantenimientoForm" (ngSubmit)="guardarMantenimiento()">
         <div class="modal-body">
           <div class="row g-3">
@@ -152,11 +155,7 @@
         </div>
 
         <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-bs-dismiss="modal"
-          >
+          <button class="btn btn-secondary" data-bs-dismiss="modal">
             Cancelar
           </button>
           <button
@@ -164,7 +163,7 @@
             class="btn btn-primary"
             [disabled]="mantenimientoForm.invalid"
           >
-            <i class="fas fa-save me-2"></i>Guardar Mantenimiento
+            <i class="fas fa-save me-2"></i>Guardar
           </button>
         </div>
       </form>
@@ -175,7 +174,9 @@
 <div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-sm modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header"><h5 class="modal-title">Mensaje</h5></div>
+      <div class="modal-header">
+        <h5 class="modal-title">Mensaje</h5>
+      </div>
       <div class="modal-body">{{ messageModalText }}</div>
       <div class="modal-footer">
         <button class="btn btn-primary" data-bs-dismiss="modal">Aceptar</button>
@@ -191,17 +192,13 @@
         <h5 class="modal-title">Confirmar Eliminación</h5>
       </div>
       <div class="modal-body">
-        ¿Estás seguro de eliminar este mantenimiento?
+        ¿Seguro que deseas eliminar este mantenimiento?
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" data-bs-dismiss="modal">
           Cancelar
         </button>
-        <button
-          class="btn btn-danger"
-          data-bs-dismiss="modal"
-          (click)="confirmarEliminar()"
-        >
+        <button class="btn btn-danger" (click)="confirmarEliminar()">
           Eliminar
         </button>
       </div>

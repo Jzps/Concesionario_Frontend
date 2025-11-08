@@ -9,6 +9,8 @@ import {
 } from '@angular/forms';
 import { Factura, FacturaService } from '../../services/facturas.service';
 
+declare var bootstrap: any;
+
 @Component({
   selector: 'app-facturas',
   standalone: true,
@@ -29,7 +31,7 @@ export class FacturasComponent implements OnInit {
   facturaIdToDelete: string | null = null;
 
   facturas: Factura[] = [];
-  filteredFacturas: any[] = [];
+  filteredFacturas: Factura[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -86,6 +88,9 @@ export class FacturasComponent implements OnInit {
   crearFactura(): void {
     this.facturaForm.reset({
       fecha_emision: new Date().toISOString().split('T')[0],
+      cliente_id: '',
+      empleado_id: '',
+      auto_id: '',
       precio_carro_base: 0,
       costo_mantenimiento: 0,
       descuento: 0,
@@ -100,44 +105,86 @@ export class FacturasComponent implements OnInit {
       return;
     }
 
-    const formData = this.facturaForm.getRawValue();
-    const nuevaFactura: Factura = {
-      fecha_emision: formData.fecha_emision,
-      cliente_id: formData.cliente_id,
-      empleado_id: formData.empleado_id,
-      auto_id: formData.auto_id,
-      total: formData.total,
+    const raw = this.facturaForm.getRawValue();
+
+    const cliente_id = (raw.cliente_id || '').toString().trim();
+    const empleado_id = (raw.empleado_id || '').toString().trim();
+    const auto_id = (raw.auto_id || '').toString().trim();
+
+    const nuevoPayload: Factura = {
+      fecha_emision: raw.fecha_emision,
+      cliente_id,
+      empleado_id,
+      auto_id,
+      precio_carro_base: Number(raw.precio_carro_base) || 0,
+      costo_mantenimiento: Number(raw.costo_mantenimiento) || 0,
+      descuento: Number(raw.descuento) || 0,
+      total: Number(raw.total) || 0,
+      observaciones: raw.observaciones || '',
     };
 
-    this.facturaService.crearFactura(nuevaFactura).subscribe({
+    console.log('POST /facturas payload ->', nuevoPayload);
+
+    this.facturaService.crearFactura(nuevoPayload).subscribe({
       next: (facturaCreada) => {
         console.log('Factura creada:', facturaCreada);
         this.showMessageModal('Factura creada exitosamente.');
         this.cargarFacturas();
-        this.facturaForm.reset();
+        // cerrar modal si está abierto
+        bootstrap.Modal.getInstance(
+          document.getElementById('facturaModal')
+        )?.hide();
+        this.facturaForm.reset({
+          fecha_emision: new Date().toISOString().split('T')[0],
+          precio_carro_base: 0,
+          costo_mantenimiento: 0,
+          descuento: 0,
+          total: 0,
+          observaciones: '',
+        });
       },
       error: (err) => {
         console.error('Error al crear factura:', err);
-        this.showMessageModal('Error al crear la factura.');
+        const detalle = err?.error?.detail;
+        if (detalle) {
+          this.showMessageModal(
+            'Error al crear la factura. Revisa los campos: ' +
+              JSON.stringify(detalle)
+          );
+        } else {
+          this.showMessageModal('Error al crear la factura.');
+        }
       },
     });
   }
 
   calcularTotal(): void {
-    const { precio_carro_base, costo_mantenimiento, descuento } =
-      this.facturaForm.getRawValue();
-    const total =
-      (precio_carro_base || 0) + (costo_mantenimiento || 0) - (descuento || 0);
-    this.facturaForm.patchValue({ total }, { emitEvent: false });
+    const raw = this.facturaForm.getRawValue();
+    const precio = Number(raw.precio_carro_base) || 0;
+    const mant = Number(raw.costo_mantenimiento) || 0;
+    const desc = Number(raw.descuento) || 0;
+    const total = precio + mant - desc;
+    this.facturaForm.patchValue(
+      { total: total >= 0 ? total : 0 },
+      { emitEvent: false }
+    );
   }
 
   eliminarFactura(id: string): void {
-    if (!confirm('¿Seguro que deseas eliminar esta factura?')) return;
+    this.facturaIdToDelete = id;
+    new bootstrap.Modal(document.getElementById('confirmModal')).show();
+  }
 
-    this.facturaService.eliminarFactura(id).subscribe({
+  confirmarEliminar(): void {
+    if (!this.facturaIdToDelete) return;
+
+    this.facturaService.eliminarFactura(this.facturaIdToDelete).subscribe({
       next: () => {
-        this.showMessageModal(`Factura con ID ${id} eliminada correctamente.`);
+        this.showMessageModal(
+          `Factura con ID ${this.facturaIdToDelete} eliminada correctamente.`
+        );
         this.cargarFacturas();
+        this.facturaIdToDelete = null;
       },
       error: (err) => {
         console.error('Error al eliminar factura:', err);
@@ -146,12 +193,8 @@ export class FacturasComponent implements OnInit {
     });
   }
 
-  confirmarEliminar(): void {
-    console.log('Confirmar eliminar (por implementar)');
-  }
-
   private showMessageModal(message: string): void {
     this.messageModalText = message;
-    console.log(`[Message Modal] ${message}`);
+    new bootstrap.Modal(document.getElementById('messageModal')).show();
   }
 }

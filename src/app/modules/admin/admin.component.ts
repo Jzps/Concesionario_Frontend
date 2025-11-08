@@ -9,6 +9,8 @@ import {
 } from '@angular/forms';
 import { Admin, AdminService } from '../../services/admin.service';
 
+declare var bootstrap: any;
+
 @Component({
   selector: 'app-admin',
   standalone: true,
@@ -36,88 +38,78 @@ export class AdminComponent implements OnInit {
     this.cargarAdmins();
   }
 
-  crearAdmin() {
-    this.guardarAdmin();
-  }
-
   cargarAdmins(): void {
     this.adminService.listarAdmins().subscribe({
       next: (data) => {
         this.admins = data;
-        this.filteredAdmins = [...this.admins];
+        this.filteredAdmins = [...data];
       },
-      error: (err) => {
-        console.error('Error al cargar administradores:', err);
-      },
+      error: () => this.showMessageModal('Error al cargar administradores.'),
     });
   }
 
-  filtrarAdmins() {
+  filtrarAdmins(): void {
     const term = this.filtro.toLowerCase().trim();
-    if (!term) {
-      this.filteredAdmins = [...this.admins];
-      return;
-    }
-    this.filteredAdmins = this.admins.filter(
-      (a) =>
-        a.username.toLowerCase().includes(term) ||
-        (a.nombre && a.nombre.toLowerCase().includes(term))
-    );
+    this.filteredAdmins = term
+      ? this.admins.filter(
+          (a) =>
+            a.username?.toLowerCase().includes(term) ||
+            a.email?.toLowerCase().includes(term)
+        )
+      : [...this.admins];
+  }
+
+  crearAdmin() {
+    this.adminForm.reset();
+    const modal = document.getElementById('adminModal');
+    if (modal) new bootstrap.Modal(modal).show();
   }
 
   guardarAdmin() {
-    if (this.adminForm.valid) {
-      const nuevoAdmin: Admin = {
-        username: this.adminForm.value.username,
-        password: this.adminForm.value.password,
-        nombre: this.adminForm.value.username,
-      };
-
-      this.adminService.crearAdmin(nuevoAdmin).subscribe({
-        next: (res) => {
-          this.showMessageModal('Administrador creado exitosamente.');
-          this.cargarAdmins();
-          this.adminForm.reset();
-        },
-        error: (err) => {
-          console.error('Error al crear administrador:', err);
-          this.showMessageModal('Error al crear administrador.');
-        },
-      });
-    } else {
+    if (this.adminForm.invalid) {
       this.adminForm.markAllAsTouched();
+      return;
     }
-  }
 
-  confirmarEliminar() {
-    if (this.adminIdToDelete) {
-      this.adminService.eliminarAdmin(this.adminIdToDelete).subscribe({
-        next: () => {
-          this.showMessageModal(`Administrador eliminado correctamente.`);
-          this.cargarAdmins();
-          this.adminIdToDelete = null;
-        },
-        error: (err) => {
-          console.error('Error al eliminar administrador:', err);
-          this.showMessageModal('Error al eliminar administrador.');
-        },
-      });
-    }
+    const nuevoAdmin: Admin = {
+      username: this.adminForm.value.username,
+      password: this.adminForm.value.password,
+      email: `${this.adminForm.value.username}@example.com`,
+      rol: 'ADMIN',
+      nombre: this.adminForm.value.username,
+    };
+
+    this.adminService.crearAdmin(nuevoAdmin).subscribe({
+      next: () => {
+        this.showMessageModal('Administrador creado exitosamente.');
+        this.cargarAdmins();
+      },
+      error: () => this.showMessageModal('Error al crear administrador.'),
+    });
   }
 
   eliminarAdmin(id: string) {
     this.adminIdToDelete = id;
-    this.showConfirmModal();
+    const modal = document.getElementById('confirmModal');
+    if (modal) new bootstrap.Modal(modal).show();
+  }
+
+  confirmarEliminar() {
+    if (!this.adminIdToDelete) return;
+
+    this.adminService.eliminarAdmin(this.adminIdToDelete).subscribe({
+      next: () => {
+        this.showMessageModal('Administrador eliminado correctamente.');
+        this.cargarAdmins();
+        this.adminIdToDelete = null;
+      },
+      error: () => this.showMessageModal('Error al eliminar administrador.'),
+    });
   }
 
   private showMessageModal(message: string): void {
     this.messageModalText = message;
-    console.log(`[Message Modal] ${message}`);
-  }
-
-  private showConfirmModal(): void {
-    console.log(
-      `[Confirm Modal] Eliminación solicitada para ${this.adminIdToDelete}`
-    );
+    const modal = document.getElementById('messageModal');
+    if (modal) new bootstrap.Modal(modal).show();
   }
 }

@@ -4,11 +4,12 @@ import { ApiService } from './api.service';
 
 export interface Mantenimiento {
   id?: string;
-  descripcion: string;
+  detalle: string;
   fecha: string;
   costo: number;
   empleado_id: string;
   auto_id: string;
+  cliente_id: string;
 }
 
 @Injectable({

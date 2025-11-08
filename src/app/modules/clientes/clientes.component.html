@@ -239,7 +239,8 @@
             class="btn btn-primary"
             [disabled]="clienteForm.invalid"
           >
-            <i class="fas fa-save me-2"></i>Guardar Cliente
+            <i class="fas fa-save me-2"></i>
+            {{ modoEdicion ? "Actualizar Cliente" : "Guardar Cliente" }}
           </button>
         </div>
       </form>

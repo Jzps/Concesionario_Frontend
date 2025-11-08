@@ -12,6 +12,8 @@ import {
   ConcesionarioService,
 } from '../../services/concesionario.service';
 
+declare var bootstrap: any;
+
 @Component({
   selector: 'app-concesionarios',
   standalone: true,
@@ -23,7 +25,9 @@ export class ConcesionariosComponent implements OnInit {
   filtro = '';
   concesionarioForm!: FormGroup;
   messageModalText: string = '';
-  concesionarioIdToDelete: string | null = null;
+
+  concesionarioIdEdit: string | null = null;
+  concesionarioIdDelete: string | null = null;
 
   concesionarios: Concesionario[] = [];
   filteredConcesionarios: Concesionario[] = [];
@@ -48,68 +52,25 @@ export class ConcesionariosComponent implements OnInit {
       next: (data) => {
         this.concesionarios = data;
         this.filteredConcesionarios = [...data];
-        console.log('Concesionarios cargados:', data);
       },
-      error: (err) => {
-        console.error('Error al cargar concesionarios:', err);
-        this.showMessageModal('Error al cargar los concesionarios.');
-      },
+      error: () => this.showMessageModal('Error al cargar los concesionarios.'),
     });
   }
 
   filtrarConcesionarios() {
     const term = this.filtro.toLowerCase().trim();
-    if (!term) {
-      this.filteredConcesionarios = [...this.concesionarios];
-      return;
-    }
-    this.filteredConcesionarios = this.concesionarios.filter(
-      (c) =>
-        c.nombre.toLowerCase().includes(term) ||
-        c.direccion.toLowerCase().includes(term)
-    );
+    this.filteredConcesionarios = !term
+      ? [...this.concesionarios]
+      : this.concesionarios.filter(
+          (c) =>
+            c.nombre.toLowerCase().includes(term) ||
+            c.direccion.toLowerCase().includes(term)
+        );
   }
 
   crearConcesionario() {
     this.concesionarioForm.reset();
-    this.concesionarioIdToDelete = null;
-  }
-
-  guardarConcesionario() {
-    if (this.concesionarioForm.valid) {
-      const data: Concesionario = this.concesionarioForm.value;
-
-      if (this.concesionarioIdToDelete) {
-        this.concesionarioService
-          .actualizarConcesionario(this.concesionarioIdToDelete, data)
-          .subscribe({
-            next: () => {
-              this.showMessageModal('Concesionario actualizado exitosamente.');
-              this.cargarConcesionarios();
-              this.concesionarioForm.reset();
-              this.concesionarioIdToDelete = null;
-            },
-            error: (err) => {
-              console.error('Error al actualizar:', err);
-              this.showMessageModal('Error al actualizar el concesionario.');
-            },
-          });
-      } else {
-        this.concesionarioService.crearConcesionario(data).subscribe({
-          next: () => {
-            this.showMessageModal('Concesionario creado exitosamente.');
-            this.cargarConcesionarios();
-            this.concesionarioForm.reset();
-          },
-          error: (err) => {
-            console.error('Error al crear concesionario:', err);
-            this.showMessageModal('Error al crear el concesionario.');
-          },
-        });
-      }
-    } else {
-      this.concesionarioForm.markAllAsTouched();
-    }
+    this.concesionarioIdEdit = null;
   }
 
   editarConcesionario(id: string) {
@@ -117,45 +78,77 @@ export class ConcesionariosComponent implements OnInit {
     if (!concesionario) return;
 
     this.concesionarioForm.patchValue(concesionario);
-    this.concesionarioIdToDelete = id;
-    this.showMessageModal(
-      `Editando concesionario con ID: ${id}. Modifica los campos y guarda.`
-    );
+    this.concesionarioIdEdit = id;
+
+    // ABRIR MODAL AUTOMÁTICAMENTE
+    new bootstrap.Modal(document.getElementById('concesionarioModal')).show();
+  }
+
+  guardarConcesionario() {
+    if (!this.concesionarioForm.valid) {
+      this.concesionarioForm.markAllAsTouched();
+      return;
+    }
+
+    const data: Concesionario = this.concesionarioForm.value;
+
+    if (this.concesionarioIdEdit) {
+      this.concesionarioService
+        .actualizarConcesionario(this.concesionarioIdEdit, data)
+        .subscribe({
+          next: () => {
+            this.showMessageModal('Concesionario actualizado exitosamente.');
+            this.cargarConcesionarios();
+            this.cerrarFormulario();
+          },
+          error: () =>
+            this.showMessageModal('Error al actualizar el concesionario.'),
+        });
+      return;
+    }
+
+    this.concesionarioService.crearConcesionario(data).subscribe({
+      next: () => {
+        this.showMessageModal('Concesionario creado con éxito.');
+        this.cargarConcesionarios();
+        this.cerrarFormulario();
+      },
+      error: () => this.showMessageModal('Error al crear el concesionario.'),
+    });
   }
 
   eliminarConcesionario(id: string) {
-    this.concesionarioIdToDelete = id;
-    this.showConfirmModal();
+    this.concesionarioIdDelete = id;
+    new bootstrap.Modal(document.getElementById('confirmModal')).show();
   }
 
   confirmarEliminar() {
-    if (this.concesionarioIdToDelete) {
-      this.concesionarioService
-        .eliminarConcesionario(this.concesionarioIdToDelete)
-        .subscribe({
-          next: () => {
-            this.showMessageModal(
-              `Concesionario con ID ${this.concesionarioIdToDelete} eliminado.`
-            );
-            this.cargarConcesionarios();
-            this.concesionarioIdToDelete = null;
-          },
-          error: (err) => {
-            console.error('Error al eliminar concesionario:', err);
-            this.showMessageModal('Error al eliminar el concesionario.');
-          },
-        });
-    }
+    if (!this.concesionarioIdDelete) return;
+
+    this.concesionarioService
+      .eliminarConcesionario(this.concesionarioIdDelete)
+      .subscribe({
+        next: () => {
+          this.showMessageModal('Concesionario eliminado correctamente.');
+          this.cargarConcesionarios();
+          this.concesionarioIdDelete = null;
+        },
+        error: () =>
+          this.showMessageModal('Error al eliminar el concesionario.'),
+      });
   }
 
-  private showMessageModal(message: string): void {
-    this.messageModalText = message;
-    console.log(`[Message Modal] ${message}`);
-  }
-
-  private showConfirmModal(): void {
-    console.log(
-      `[Confirm Modal] Solicitud de eliminación para ${this.concesionarioIdToDelete}`
+  private cerrarFormulario() {
+    const modal = bootstrap.Modal.getInstance(
+      document.getElementById('concesionarioModal')
     );
+    modal?.hide();
+    this.concesionarioForm.reset();
+    this.concesionarioIdEdit = null;
+  }
+
+  private showMessageModal(message: string) {
+    this.messageModalText = message;
+    new bootstrap.Modal(document.getElementById('messageModal')).show();
   }
 }
