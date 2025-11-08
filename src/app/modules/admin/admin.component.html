@@ -30,9 +30,7 @@
         <tr>
           <th>ID</th>
           <th>Usuario</th>
-          <th>Email</th>
-          <th>Rol</th>
-          <th>Fecha Creación</th>
+          <th>Clave</th>
           <th class="text-center">Acciones</th>
         </tr>
       </thead>
@@ -40,9 +38,7 @@
         <tr *ngFor="let admin of filteredAdmins">
           <td>{{ admin.id }}</td>
           <td>{{ admin.username }}</td>
-          <td>{{ admin.email }}</td>
-          <td>{{ admin.rol }}</td>
-          <td>{{ admin.fechaCreacion | date : "dd/MM/yyyy" }}</td>
+          <td>{{ admin.password }}</td>
           <td class="text-center">
             <button
               class="btn btn-sm btn-danger"
