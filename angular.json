@@ -1,8 +1,10 @@
 {
+  
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "cli": {
     "analytics": false
   },
+  
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
@@ -38,9 +40,12 @@
               "src/assets"
             ],
             "styles": [
-              "src/scss/styles.scss"
+              "src/scss/styles.scss", 
+              "node_modules/@fortawesome/fontawesome-free/css/all.min.css"
             ],
-            "scripts": [],
+            "scripts": [
+              "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
+            ],
             "allowedCommonJsDependencies": [],
             "stylePreprocessorOptions": {
               "sass": {

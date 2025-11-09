@@ -1,22 +1,29 @@
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3 class="mb-0">Gestión de Clientes</h3>
-    <button class="btn btn-primary btn-lg" (click)="crearCliente()">
-      + Nuevo Cliente 
+
+    <button
+      class="btn btn-primary btn-lg"
+      data-bs-toggle="modal"
+      data-bs-target="#clienteModal"
+    >
+      <i class="fas fa-user-plus me-2"></i>+ Nuevo Cliente
     </button>
   </div>
 
-  <div class="input-group mb-4" style="max-width: 350px;">
+  <div class="input-group mb-4" style="max-width: 350px">
     <span class="input-group-text bg-light border-end-0">
       <i class="fas fa-search"></i>
     </span>
+
     <input
       type="text"
       class="form-control border-start-0 ps-0"
       placeholder="Buscar cliente por nombre o DNI"
       [(ngModel)]="filtro"
+      (input)="filtrarClientes()"
     />
-    </div>
+  </div>
 
   <div class="table-responsive">
     <table class="table table-striped table-hover align-middle shadow-sm">
@@ -29,10 +36,11 @@
           <th>Correo</th>
           <th>Teléfono</th>
           <th>Dirección</th>
-          <th class="text-center">Acciones</th> </tr>
+          <th class="text-center">Acciones</th>
+        </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let cliente of clientes">
+        <tr *ngFor="let cliente of filteredClientes">
           <td>{{ cliente.id }}</td>
           <td>{{ cliente.nombre }}</td>
           <td>{{ cliente.apellido }}</td>
@@ -41,15 +49,271 @@
           <td>{{ cliente.telefono }}</td>
           <td>{{ cliente.direccion }}</td>
           <td class="text-center">
-            <button class="btn btn-sm btn-info text-white me-2" (click)="editarCliente(cliente.id)">
+            <button
+              class="btn btn-sm btn-info text-white me-2"
+              (click)="editarCliente(cliente.id!)"
+            >
               <i class="fas fa-edit"></i> Editar
             </button>
-            <button class="btn btn-sm btn-danger" (click)="eliminarCliente(cliente.id)">
+            <button
+              class="btn btn-sm btn-danger"
+              (click)="eliminarCliente(cliente.id!)"
+            >
               <i class="fas fa-trash-alt"></i> Eliminar
             </button>
           </td>
         </tr>
+        <tr *ngIf="filteredClientes.length === 0">
+          <td colspan="8" class="text-center py-4 text-muted">
+            No se encontraron clientes que coincidan con la búsqueda.
+          </td>
+        </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="clienteModal"
+  tabindex="-1"
+  aria-labelledby="clienteModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="clienteModalLabel">
+          <i class="fas fa-user-plus me-2"></i> Crear Nuevo Cliente
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <form [formGroup]="clienteForm" (ngSubmit)="guardarCliente()">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input
+              type="text"
+              class="form-control"
+              id="nombre"
+              formControlName="nombre"
+              placeholder="Nombre del cliente"
+            />
+            <div
+              *ngIf="
+                clienteForm.get('nombre')?.invalid &&
+                (clienteForm.get('nombre')?.dirty ||
+                  clienteForm.get('nombre')?.touched)
+              "
+              class="text-danger mt-1"
+            >
+              El nombre es obligatorio.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="apellido" class="form-label">Apellido</label>
+            <input
+              type="text"
+              class="form-control"
+              id="apellido"
+              formControlName="apellido"
+              placeholder="Apellido del cliente"
+            />
+            <div
+              *ngIf="
+                clienteForm.get('apellido')?.invalid &&
+                (clienteForm.get('apellido')?.dirty ||
+                  clienteForm.get('apellido')?.touched)
+              "
+              class="text-danger mt-1"
+            >
+              El apellido es obligatorio.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="dni" class="form-label">DNI</label>
+            <input
+              type="text"
+              class="form-control"
+              id="dni"
+              formControlName="dni"
+              placeholder="Documento de Identidad"
+            />
+            <div
+              *ngIf="
+                clienteForm.get('dni')?.invalid &&
+                (clienteForm.get('dni')?.dirty ||
+                  clienteForm.get('dni')?.touched)
+              "
+              class="text-danger mt-1"
+            >
+              El DNI debe tener 10 dígitos.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="correo" class="form-label">Correo Electrónico</label>
+            <input
+              type="email"
+              class="form-control"
+              id="correo"
+              formControlName="correo"
+              placeholder="ejemplo@correo.com"
+            />
+            <div
+              *ngIf="
+                clienteForm.get('correo')?.invalid &&
+                (clienteForm.get('correo')?.dirty ||
+                  clienteForm.get('correo')?.touched)
+              "
+              class="text-danger mt-1"
+            >
+              <span *ngIf="clienteForm.get('correo')?.errors?.['required']">
+                El correo es obligatorio.
+              </span>
+              <span *ngIf="clienteForm.get('correo')?.errors?.['email']">
+                El formato de correo es inválido.
+              </span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="telefono" class="form-label">Teléfono</label>
+            <input
+              type="tel"
+              class="form-control"
+              id="telefono"
+              formControlName="telefono"
+              placeholder="Número de teléfono"
+            />
+            <div
+              *ngIf="
+                clienteForm.get('telefono')?.invalid &&
+                (clienteForm.get('telefono')?.dirty ||
+                  clienteForm.get('telefono')?.touched)
+              "
+              class="text-danger mt-1"
+            >
+              El teléfono debe tener 10 dígitos.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="direccion" class="form-label">Dirección</label>
+            <input
+              type="text"
+              class="form-control"
+              id="direccion"
+              formControlName="direccion"
+              placeholder="Dirección de residencia"
+            />
+            <div
+              *ngIf="
+                clienteForm.get('direccion')?.invalid &&
+                (clienteForm.get('direccion')?.dirty ||
+                  clienteForm.get('direccion')?.touched)
+              "
+              class="text-danger mt-1"
+            >
+              La dirección es obligatoria.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="clienteForm.invalid"
+          >
+            <i class="fas fa-save me-2"></i>
+            {{ modoEdicion ? "Actualizar Cliente" : "Guardar Cliente" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="messageModal"
+  tabindex="-1"
+  aria-labelledby="messageModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="messageModalLabel">Mensaje</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        {{ messageModalText }}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+          Aceptar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="confirmModal"
+  tabindex="-1"
+  aria-labelledby="confirmModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="confirmModalLabel">
+          Confirmar Eliminación
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        ¿Estás seguro de que deseas eliminar este cliente?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          data-bs-dismiss="modal"
+          (click)="confirmarEliminar()"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
   </div>
 </div>

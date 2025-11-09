@@ -1,65 +1,154 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
+import {
+  FormBuilder,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import {
+  Concesionario,
+  ConcesionarioService,
+} from '../../services/concesionario.service';
 
-// Nueva Interfaz de Datos
-interface Concesionario {
-  id: string;
-  nombre: string;
-  direccion: string;
-  telefono: string;
-  email: string;
-  ciudad: string;
-}
+declare var bootstrap: any;
 
 @Component({
   selector: 'app-concesionarios',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './concesionarios.component.html',
-  // Reutilizamos el estilo de tabla/contenedor
-  styleUrls: ['../clientes/clientes.component.scss'] 
+  styleUrls: ['../clientes/clientes.component.scss'],
 })
-export class ConcesionariosComponent {
+export class ConcesionariosComponent implements OnInit {
   filtro = '';
+  concesionarioForm!: FormGroup;
+  messageModalText: string = '';
 
-  // Datos de prueba (Simulando la respuesta del GET /concesionario - Listar)
-  concesionarios: Concesionario[] = [
-    {
-      id: 'C1',
-      nombre: 'AutoCentro Principal',
-      direccion: 'Av. Libertador #10-50',
-      telefono: '6015551234',
-      email: 'contacto@autocentro.com',
-      ciudad: 'Bogotá',
-    },
-    {
-      id: 'C2',
-      nombre: 'Ruedas del Sur',
-      direccion: 'Calle 25 #5-10',
-      telefono: '6045555678',
-      email: 'sur@ruedas.com',
-      ciudad: 'Medellín',
-    },
-  ];
+  concesionarioIdEdit: string | null = null;
+  concesionarioIdDelete: string | null = null;
 
-  // Funciones Mapeadas a los Métodos HTTP
-  buscar() { // Mapea a GET /concesionario/{concesionario_id}
-    console.log('Buscando concesionario:', this.filtro);
+  concesionarios: Concesionario[] = [];
+  filteredConcesionarios: Concesionario[] = [];
+
+  constructor(
+    private fb: FormBuilder,
+    private concesionarioService: ConcesionarioService
+  ) {}
+
+  ngOnInit(): void {
+    this.concesionarioForm = this.fb.group({
+      nombre: ['', [Validators.required]],
+      direccion: ['', [Validators.required]],
+      telefono: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+    });
+
+    this.cargarConcesionarios();
   }
 
-  crearConcesionario() { // Mapea a POST /concesionario
-    alert('Función crear concesionario');
+  cargarConcesionarios() {
+    this.concesionarioService.listarConcesionarios().subscribe({
+      next: (data) => {
+        this.concesionarios = data;
+        this.filteredConcesionarios = [...data];
+      },
+      error: () => this.showMessageModal('Error al cargar los concesionarios.'),
+    });
   }
 
-  editarConcesionario(id: string) { // Mapea a PUT /concesionario/{concesionario_id}
-    alert(`Editar concesionario con ID: ${id}`);
+  filtrarConcesionarios() {
+    const term = this.filtro.toLowerCase().trim();
+    this.filteredConcesionarios = !term
+      ? [...this.concesionarios]
+      : this.concesionarios.filter(
+          (c) =>
+            c.nombre.toLowerCase().includes(term) ||
+            c.direccion.toLowerCase().includes(term)
+        );
   }
 
-  eliminarConcesionario(id: string) { // Mapea a DELETE /concesionario/{concesionario_id}
-    const confirmar = confirm('¿Seguro que deseas eliminar este concesionario?');
-    if (confirmar) {
-      this.concesionarios = this.concesionarios.filter(c => c.id !== id);
+  crearConcesionario() {
+    this.concesionarioForm.reset();
+    this.concesionarioIdEdit = null;
+  }
+
+  editarConcesionario(id: string) {
+    const concesionario = this.concesionarios.find((c) => c.id === id);
+    if (!concesionario) return;
+
+    this.concesionarioForm.patchValue(concesionario);
+    this.concesionarioIdEdit = id;
+
+    // ABRIR MODAL AUTOMÁTICAMENTE
+    new bootstrap.Modal(document.getElementById('concesionarioModal')).show();
+  }
+
+  guardarConcesionario() {
+    if (!this.concesionarioForm.valid) {
+      this.concesionarioForm.markAllAsTouched();
+      return;
     }
+
+    const data: Concesionario = this.concesionarioForm.value;
+
+    if (this.concesionarioIdEdit) {
+      this.concesionarioService
+        .actualizarConcesionario(this.concesionarioIdEdit, data)
+        .subscribe({
+          next: () => {
+            this.showMessageModal('Concesionario actualizado exitosamente.');
+            this.cargarConcesionarios();
+            this.cerrarFormulario();
+          },
+          error: () =>
+            this.showMessageModal('Error al actualizar el concesionario.'),
+        });
+      return;
+    }
+
+    this.concesionarioService.crearConcesionario(data).subscribe({
+      next: () => {
+        this.showMessageModal('Concesionario creado con éxito.');
+        this.cargarConcesionarios();
+        this.cerrarFormulario();
+      },
+      error: () => this.showMessageModal('Error al crear el concesionario.'),
+    });
+  }
+
+  eliminarConcesionario(id: string) {
+    this.concesionarioIdDelete = id;
+    new bootstrap.Modal(document.getElementById('confirmModal')).show();
+  }
+
+  confirmarEliminar() {
+    if (!this.concesionarioIdDelete) return;
+
+    this.concesionarioService
+      .eliminarConcesionario(this.concesionarioIdDelete)
+      .subscribe({
+        next: () => {
+          this.showMessageModal('Concesionario eliminado correctamente.');
+          this.cargarConcesionarios();
+          this.concesionarioIdDelete = null;
+        },
+        error: () =>
+          this.showMessageModal('Error al eliminar el concesionario.'),
+      });
+  }
+
+  private cerrarFormulario() {
+    const modal = bootstrap.Modal.getInstance(
+      document.getElementById('concesionarioModal')
+    );
+    modal?.hide();
+    this.concesionarioForm.reset();
+    this.concesionarioIdEdit = null;
+  }
+
+  private showMessageModal(message: string) {
+    this.messageModalText = message;
+    new bootstrap.Modal(document.getElementById('messageModal')).show();
   }
 }
