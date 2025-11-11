@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { AuthService, LoginRequest } from '../../../services/auth.service';
 import { NotificationService } from '../../../services/notification.service';
 
+declare var bootstrap: any;
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -13,12 +15,10 @@ import { NotificationService } from '../../../services/notification.service';
   styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent implements OnInit {
-  loginData: LoginRequest = {
-    username: '',
-    password: '',
-  };
-
+  loginData: LoginRequest = { username: '', password: '' };
+  registerData = { username: '', password: '' };
   loading = false;
+  modalMessage = '';
 
   constructor(
     private authService: AuthService,
@@ -30,17 +30,9 @@ export class LoginComponent implements OnInit {
 
   onSubmit(): void {
     if (this.loading) return;
-
-    console.log('Intentando login con:', this.loginData);
     this.loading = true;
 
-    if (
-      this.loginData.username === 'admin' &&
-      this.loginData.password === 'admin123'
-    ) {
-      this.loginMock();
-      return;
-    }
+    console.log('Intentando login con:', this.loginData);
 
     this.authService.login(this.loginData).subscribe({
       next: (response) => {
@@ -51,35 +43,56 @@ export class LoginComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error en login:', error);
-        if (error.status === 0) {
-          this.notificationService.showError(
-            'No se puede conectar al servidor. Usando modo demo.'
-          );
-          this.loginMock();
+        this.loading = false;
+
+        if (error.status === 404 || error.status === 422) {
+          this.modalMessage = 'Usuario o contraseña incorrecta.';
+          this.openModal('errorModal');
+        } else if (error.status === 0) {
+          this.modalMessage = 'No se puede conectar al servidor.';
+          this.openModal('errorModal');
         } else {
-          this.notificationService.showError(
-            'Credenciales incorrectas. Intenta nuevamente.'
-          );
-          this.loading = false;
+          this.modalMessage = 'Error inesperado. Intenta nuevamente.';
+          this.openModal('errorModal');
         }
       },
     });
   }
 
-  private loginMock(): void {
-    const mockResponse = {
-      token: 'mock_token_' + Date.now(),
-      user: {
-        id: '1',
-        username: 'admin',
-        nombre: 'Administrador',
-        es_admin: true,
-        email: 'admin@demo.com',
+  openModal(id: string): void {
+    const modalElement = document.getElementById(id);
+    if (modalElement) {
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+    }
+  }
+
+  openRegisterModal(): void {
+    this.openModal('registerModal');
+  }
+
+  onRegisterSubmit(): void {
+    if (this.loading) return;
+    this.loading = true;
+
+    console.log('Registrando admin:', this.registerData);
+
+    this.authService.register(this.registerData).subscribe({
+      next: (response) => {
+        console.log('Admin registrado:', response);
+        this.loading = false;
+        this.notificationService.showSuccess(
+          'Administrador registrado con éxito'
+        );
+
+        const modalEl = document.getElementById('registerModal');
+        if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
       },
-    };
-    this.authService.setUserData(mockResponse);
-    this.notificationService.showSuccess('Inicio de sesión (modo demo)');
-    this.router.navigate(['/dashboard']);
-    this.loading = false;
+      error: (error) => {
+        console.error('Error al registrar admin:', error);
+        this.loading = false;
+        this.notificationService.showError('Error al registrar admin');
+      },
+    });
   }
 }

@@ -1,54 +1,50 @@
 import { CommonModule } from '@angular/common';
-import { Component, ViewEncapsulation } from '@angular/core';
-import { Router } from '@angular/router';
-
 import {
-  ButtonModule,
-  ContainerComponent,
-  DropdownComponent,
-  DropdownDividerDirective,
-  DropdownHeaderDirective,
-  DropdownItemDirective,
-  DropdownMenuDirective,
-  DropdownModule,
-  DropdownToggleDirective,
-  HeaderModule,
-  HeaderTogglerDirective,
-  NavModule,
-  SidebarTogglerDirective,
-} from '@coreui/angular';
-
-import { IconDirective } from '@coreui/icons-angular';
+  Component,
+  EventEmitter,
+  OnDestroy,
+  OnInit,
+  Output,
+} from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { AuthService, User } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-default-header',
   standalone: true,
-  encapsulation: ViewEncapsulation.None,
-  imports: [
-    CommonModule,
-    HeaderModule,
-    ButtonModule,
-    DropdownModule,
-    DropdownComponent,
-    DropdownToggleDirective,
-    DropdownMenuDirective,
-    DropdownItemDirective,
-    DropdownHeaderDirective,
-    DropdownDividerDirective,
-    NavModule,
-    SidebarTogglerDirective,
-    HeaderTogglerDirective,
-    ContainerComponent,
-    IconDirective,
-  ],
+  imports: [CommonModule, RouterLink],
   templateUrl: './default-header.component.html',
   styleUrls: ['./default-header.component.scss'],
 })
-export class DefaultHeaderComponent {
-  constructor(private router: Router) {}
+export class DefaultHeaderComponent implements OnInit, OnDestroy {
+  @Output() toggleSidebarEvent = new EventEmitter<void>();
+
+  user: User | null = null;
+  sub!: Subscription;
+
+  constructor(private authService: AuthService, private router: Router) {}
+
+  ngOnInit(): void {
+    this.sub = this.authService.currentUser$.subscribe((u) => (this.user = u));
+    if (!this.user) this.user = this.authService.getCurrentUser();
+  }
+
+  toggleSidebar(): void {
+    this.toggleSidebarEvent.emit();
+  }
+
+  get displayName(): string {
+    if (!this.user) return 'Usuario';
+    return this.user.nombre || this.user.username || 'Usuario';
+  }
 
   logout(): void {
-    console.log('Cierre de sesión...');
-    this.router.navigate(['/login']);
+    this.authService.logout();
+    this.router.navigate(['/auth/login']);
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
   }
 }

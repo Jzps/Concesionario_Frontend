@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
@@ -12,39 +12,33 @@ import { NotificationService } from '../../../services/notification.service';
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss'],
 })
-export class RegisterComponent implements OnInit {
+export class RegisterComponent {
   registerData = {
     username: '',
     password: '',
-    nombre: '',
-    email: '',
   };
-
   loading = false;
 
   constructor(
-    private authService: AuthService,
-    private notificationService: NotificationService,
+    private auth: AuthService,
+    private notification: NotificationService,
     private router: Router
   ) {}
-
-  ngOnInit(): void {}
 
   onSubmit(): void {
     if (this.loading) return;
     this.loading = true;
 
-    this.authService.register(this.registerData).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Usuario registrado con éxito');
+    this.auth.register(this.registerData).subscribe({
+      next: (res) => {
+        console.log('Registro exitoso:', res);
+        this.notification.showSuccess('Administrador creado correctamente');
         this.router.navigate(['/auth/login']);
         this.loading = false;
       },
-      error: (error) => {
-        console.error('Error en registro:', error);
-        this.notificationService.showError(
-          'Error al registrar. Intenta nuevamente.'
-        );
+      error: (err) => {
+        console.error('Error registro:', err);
+        this.notification.showError('Error al registrar usuario');
         this.loading = false;
       },
     });
