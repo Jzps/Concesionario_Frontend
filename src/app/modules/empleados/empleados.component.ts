@@ -1,89 +1,175 @@
-import { CommonModule, CurrencyPipe } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { DropdownModule } from '@coreui/angular'; // Necesario para el menú desplegable (si usas CoreUI)
-
-// Nueva Interfaz de Datos
-interface Empleado {
-  id: string;
-  nombre: string;
-  apellido: string;
-  dni: string;
-  cargo: 'VENDEDOR' | 'TECNICO' | 'ADMINISTRATIVO'; // Tipos de empleado
-  telefono: string;
-  salario: number;
-}
+import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import {
+  FormBuilder,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import {
+  Empleado,
+  EmpleadosService,
+  Tecnico,
+  Vendedor,
+} from '../../services/empleados.service';
 
 @Component({
   selector: 'app-empleados',
   standalone: true,
-  // Asegúrate de importar DropdownModule si usas las clases de CoreUI para el menú
-  imports: [CommonModule, FormsModule, CurrencyPipe, DropdownModule], 
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './empleados.component.html',
-  // Reutilizamos el estilo de tabla/contenedor
-  styleUrls: ['../clientes/clientes.component.scss'] 
+  styleUrls: ['../clientes/clientes.component.scss'],
 })
-export class EmpleadosComponent {
+export class EmpleadosComponent implements OnInit {
   filtro = '';
-  // Opciones de vista: 'TODOS', 'VENDEDORES', 'TECNICOS'
-  vistaActual: 'TODOS' | 'VENDEDORES' | 'TECNICOS' = 'TODOS'; 
+  vistaActual: 'TODOS' | 'VENDEDORES' | 'TECNICOS' = 'TODOS';
+  empleadoForm: any;
+  empleados: Empleado[] = [];
+  modalTitle = 'Registrar Empleado';
+  messageModalText = '';
+  empleadoIdSeleccionado: string | null = null;
 
-  // Datos de prueba
-  todosLosEmpleados: Empleado[] = [
-    { id: 'E1', nombre: 'Sofía', apellido: 'Rojas', dni: '987654321', cargo: 'TECNICO', telefono: '3101234567', salario: 2500000 },
-    { id: 'E2', nombre: 'Ricardo', apellido: 'Méndez', dni: '123456789', cargo: 'VENDEDOR', telefono: '3129876543', salario: 1800000 },
-    { id: 'E3', nombre: 'Marta', apellido: 'Perez', dni: '111222333', cargo: 'ADMINISTRATIVO', telefono: '3151112223', salario: 2000000 },
-  ];
+  constructor(
+    private fb: FormBuilder,
+    private empleadosService: EmpleadosService
+  ) {}
 
-  // Propiedad que la tabla usa para iterar
-  get empleadosMostrados(): Empleado[] {
-    // 1. Filtrar por vista actual (GET /empleados/vendedores, GET /empleados/tecnicos)
-    let listaFiltrada = this.todosLosEmpleados;
-    if (this.vistaActual === 'VENDEDORES') {
-      listaFiltrada = this.todosLosEmpleados.filter(e => e.cargo === 'VENDEDOR');
-    } else if (this.vistaActual === 'TECNICOS') {
-      listaFiltrada = this.todosLosEmpleados.filter(e => e.cargo === 'TECNICO');
-    }
-    
-    // 2. Aplicar filtro de búsqueda (si lo hubiera, implementando lógica real)
-    if (this.filtro && this.vistaActual === 'TODOS') {
-        // En un caso real, la búsqueda se haría en la API (GET /empleados/{empleado_id})
-        return listaFiltrada.filter(e => 
-          e.nombre.toLowerCase().includes(this.filtro.toLowerCase()) || 
-          e.dni.includes(this.filtro)
-        );
-    }
+  ngOnInit(): void {
+    this.empleadoForm = this.fb.group({
+      nombre: ['', Validators.required],
+      apellido: ['', Validators.required],
+      dni: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+      correo: ['', [Validators.required, Validators.email]],
+      telefono: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+      fecha_contratacion: ['', Validators.required],
+    });
 
-    return listaFiltrada;
+    this.cargarEmpleados();
   }
 
-  // --- Funciones Mapeadas a Métodos HTTP ---
-
-  buscar() { // Mapea a GET /empleados/{empleado_id}
-    console.log('Buscando empleado:', this.filtro);
+  cargarEmpleados() {
+    this.empleadosService.listarEmpleados().subscribe({
+      next: (data) => (this.empleados = data),
+      error: () => this.showMessageModal('Error al cargar empleados'),
+    });
   }
 
-  // Mapea a POST /empleados, POST /vendedores, POST /tecnicos
-  registrarEmpleado(tipo: 'GENERAL' | 'VENDEDOR' | 'TECNICO') { 
-    alert(`Abriendo formulario para registrar ${tipo} (POST)`);
+  get empleadosMostrados() {
+    const t = this.filtro.toLowerCase();
+    return this.empleados.filter(
+      (e) =>
+        e.nombre?.toLowerCase().includes(t) ||
+        e.apellido?.toLowerCase().includes(t) ||
+        e.dni?.includes(t)
+    );
   }
 
-  editarEmpleado(id: string) { // Mapea a PUT /empleados/{empleado_id}
-    alert(`Editar empleado con ID: ${id} (PUT)`);
-  }
-
-  eliminarEmpleado(id: string) { // Mapea a DELETE /empleados/{empleado_id}
-    const confirmar = confirm('¿Seguro que deseas eliminar este empleado?');
-    if (confirmar) {
-      this.todosLosEmpleados = this.todosLosEmpleados.filter(e => e.id !== id);
-    }
-  }
-
-  // --- Función de Vista Alterna ---
-  
   cambiarVista(vista: 'TODOS' | 'VENDEDORES' | 'TECNICOS') {
     this.vistaActual = vista;
-    this.filtro = ''; // Limpiar filtro al cambiar de vista
-    console.log(`Cambiando a vista: ${vista}`);
+
+    if (vista === 'VENDEDORES') {
+      this.empleadosService.listarVendedores().subscribe({
+        next: (data) => {
+          console.log('Respuesta vendedores:', data);
+          this.empleados = data;
+        },
+        error: () => this.showMessageModal('Error cargando vendedores'),
+      });
+    } else if (vista === 'TECNICOS') {
+      this.empleadosService.listarTecnicos().subscribe({
+        next: (data) => {
+          this.empleados = data;
+        },
+        error: () => this.showMessageModal('Error cargando técnicos'),
+      });
+    } else {
+      this.cargarEmpleados();
+    }
+  }
+
+  nuevoEmpleado() {
+    this.modalTitle = 'Registrar Empleado';
+    this.empleadoForm.reset();
+  }
+
+  guardarEmpleado() {
+    if (this.empleadoForm.invalid) return;
+
+    const data = this.empleadoForm.value;
+
+    this.empleadosService.crearEmpleado(data).subscribe({
+      next: () => {
+        this.showMessageModal('Empleado registrado con éxito');
+        this.cargarEmpleados();
+      },
+      error: () => this.showMessageModal('Error registrando empleado'),
+    });
+  }
+
+  editarEmpleado(id: string) {
+    this.empleadosService.obtenerEmpleadoPorId(id).subscribe({
+      next: (empleado) => {
+        this.modalTitle = 'Editar Empleado';
+        this.empleadoForm.patchValue(empleado);
+        this.empleadoIdSeleccionado = id;
+      },
+      error: () => this.showMessageModal('No fue posible cargar los datos'),
+    });
+  }
+
+  abrirAsignarRolModal(id: string) {
+    this.empleadoIdSeleccionado = id;
+    this.showModal('rolModal');
+  }
+
+  asignarVendedor() {
+    if (!this.empleadoIdSeleccionado) return;
+    const data: Vendedor = { empleado_id: this.empleadoIdSeleccionado };
+
+    this.empleadosService.registrarVendedor(data).subscribe({
+      next: () => {
+        this.showMessageModal('Empleado asignado como vendedor');
+        this.cargarEmpleados();
+      },
+      error: () => this.showMessageModal('Error asignando rol'),
+    });
+  }
+
+  asignarTecnico() {
+    if (!this.empleadoIdSeleccionado) return;
+    const data: Tecnico = { empleado_id: this.empleadoIdSeleccionado };
+
+    this.empleadosService.registrarTecnico(data).subscribe({
+      next: () => {
+        this.showMessageModal('Empleado asignado como técnico');
+        this.cargarEmpleados();
+      },
+      error: () => this.showMessageModal('Error asignando rol'),
+    });
+  }
+
+  eliminarEmpleado(id: string) {
+    if (!confirm('¿Eliminar empleado?')) return;
+
+    this.empleadosService.eliminarEmpleado(id).subscribe({
+      next: () => {
+        this.showMessageModal('Empleado eliminado');
+        this.cargarEmpleados();
+      },
+      error: () => this.showMessageModal('Error eliminando empleado'),
+    });
+  }
+
+  private showModal(id: string) {
+    const el = document.getElementById(id);
+    if (el) {
+      (window as any).bootstrap.Modal.getOrCreateInstance(el).show();
+    }
+  }
+
+  private showMessageModal(msg: string) {
+    this.messageModalText = msg;
+    const el = document.getElementById('messageModal');
+    (window as any).bootstrap.Modal.getOrCreateInstance(el).show();
   }
 }

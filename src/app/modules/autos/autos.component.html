@@ -1,40 +1,33 @@
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h3 class="mb-0 fw-bold">Gestión de Autos</h3>
-    
+
     <div>
-      <button class="btn btn-primary btn-lg me-2" (click)="comprarAuto()">
-        <i class="fas fa-plus-circle"></i> Comprar Auto
+      <button
+        class="btn btn-primary btn-lg me-2"
+        data-bs-toggle="modal"
+        data-bs-target="#autoModal"
+        (click)="crearAuto()"
+      >
+        <i class="fas fa-plus-circle me-2"></i>Agregar Auto
       </button>
 
-      <button 
-        class="btn btn-secondary btn-lg" 
-        [ngClass]="{'btn-success': mostrandoVendidos, 'btn-secondary': !mostrandoVendidos}" 
+      <button
+        class="btn btn-secondary btn-lg"
+        [ngClass]="{ 'btn-success': mostrandoVendidos }"
         (click)="alternarVista()"
       >
-        @if (mostrandoVendidos) {
-            <i class="fas fa-car-side"></i> Autos Disponibles
-        } @else {
-            <i class="fas fa-handshake"></i> Autos Vendidos
-        }
+        {{ mostrandoVendidos ? "Autos Disponibles" : "Autos Vendidos" }}
       </button>
     </div>
   </div>
 
-  <div class="input-group mb-4" style="max-width: 350px;">
-    <span class="input-group-text bg-light border-end-0">
-      <i class="fas fa-search"></i>
-    </span>
-    <input
-      type="text"
-      class="form-control border-start-0 ps-0"
-      placeholder="Buscar auto por VIN o Placa"
-      [(ngModel)]="filtro"
-    />
-  </div>
-
   <h5 class="mb-3 text-muted">
-    {{ mostrandoVendidos ? 'Inventario de Autos Vendidos' : 'Inventario de Autos Disponibles' }}
+    {{
+      mostrandoVendidos
+        ? "Inventario de Autos Vendidos"
+        : "Inventario de Autos Disponibles"
+    }}
   </h5>
 
   <div class="table-responsive">
@@ -42,41 +35,190 @@
       <thead class="table-dark">
         <tr>
           <th>ID</th>
+          <th>Tipo</th>
           <th>Marca</th>
           <th>Modelo</th>
-          <th>Placa</th>
-          <th>VIN</th>
-          <th>Año</th>
-          <th>Color</th>
+          <th>Precio</th>
+          <th>Kilometraje</th>
+          <th>Autonomía</th>
           <th class="text-center">Acciones</th>
         </tr>
       </thead>
+
       <tbody>
         <tr *ngFor="let auto of autosMostrados">
           <td>{{ auto.id }}</td>
+          <td>{{ auto.tipo }}</td>
           <td>{{ auto.marca }}</td>
           <td>{{ auto.modelo }}</td>
-          <td>{{ auto.placa }}</td>
-          <td>{{ auto.vin }}</td>
-          <td>{{ auto.anio }}</td>
-          <td>{{ auto.color }}</td>
+          <td>{{ auto.precio | currency : "USD" : "symbol" : "1.0-0" }}</td>
+
+          <td>{{ auto.tipo == "usado" ? auto.kilometraje + " km" : "—" }}</td>
+          <td>{{ auto.tipo == "electrico" ? auto.autonomia + " km" : "—" }}</td>
+
           <td class="text-center">
-            
-            @if (auto.estado === 'DISPONIBLE') {
-                <button class="btn btn-sm btn-success me-2" (click)="venderAuto(auto.id)">
-                    Vender
-                </button>
-                <button class="btn btn-sm btn-info text-white me-2" (click)="editarAuto(auto.id)">
-                    Editar
-                </button>
-            }
-            
-            <button class="btn btn-sm btn-danger" (click)="eliminarAuto(auto.id)">
+            <button
+              *ngIf="auto.estado === 'DISPONIBLE'"
+              class="btn btn-sm btn-success me-2"
+              (click)="venderAuto(auto.id!)"
+            >
+              Vender
+            </button>
+
+            <button
+              class="btn btn-sm btn-warning me-2"
+              data-bs-toggle="modal"
+              data-bs-target="#autoModal"
+              (click)="editarAuto(auto)"
+            >
+              Editar
+            </button>
+
+            <button
+              class="btn btn-sm btn-danger"
+              (click)="eliminarAuto(auto.id!)"
+            >
               Eliminar
             </button>
           </td>
         </tr>
+
+        <tr *ngIf="autosMostrados.length === 0">
+          <td colspan="8" class="text-center py-4 text-muted">
+            No hay autos en esta categoría.
+          </td>
+        </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<div class="modal fade" id="autoModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">
+          {{ autoEditandoId ? "Editar Auto" : "Registrar Auto" }}
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+
+      <form [formGroup]="autoForm" (ngSubmit)="guardarAuto()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Tipo *</label>
+              <select class="form-select" formControlName="tipo">
+                <option value="nuevo">Nuevo</option>
+                <option value="usado">Usado</option>
+                <option value="electrico">Eléctrico</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Marca *</label>
+              <input type="text" class="form-control" formControlName="marca" />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Modelo *</label>
+              <input
+                type="text"
+                class="form-control"
+                formControlName="modelo"
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Precio *</label>
+              <input
+                type="number"
+                class="form-control"
+                formControlName="precio"
+                min="1"
+              />
+            </div>
+
+            <div class="col-md-6" *ngIf="autoForm.value.tipo === 'usado'">
+              <label class="form-label">Kilometraje *</label>
+              <input
+                type="number"
+                class="form-control"
+                formControlName="kilometraje"
+                min="0"
+              />
+            </div>
+
+            <div class="col-md-6" *ngIf="autoForm.value.tipo === 'electrico'">
+              <label class="form-label">Autonomía *</label>
+              <input
+                type="number"
+                class="form-control"
+                formControlName="autonomia"
+                min="0"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="autoForm.invalid"
+          >
+            {{ autoEditandoId ? "Actualizar" : "Guardar" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="messageModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Mensaje</h5>
+      </div>
+      <div class="modal-body">{{ messageModalText }}</div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" data-bs-dismiss="modal">Aceptar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Confirmar Eliminación</h5>
+      </div>
+      <div class="modal-body">¿Seguro que deseas eliminar este auto?</div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button
+          class="btn btn-danger"
+          data-bs-dismiss="modal"
+          (click)="confirmarEliminar()"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
   </div>
 </div>

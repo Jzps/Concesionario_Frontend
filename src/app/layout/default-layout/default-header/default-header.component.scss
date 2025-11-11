@@ -1,0 +1,21 @@
+.c-header {
+  background-color: #fff;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0.5rem 1rem;
+
+  .fw-semibold {
+    font-size: 0.95rem;
+  }
+
+  .text-muted {
+    font-size: 0.8rem;
+  }
+
+  .dropdown-menu {
+    font-size: 0.9rem;
+  }
+
+  .dropdown-item.text-danger:hover {
+    background-color: #f8d7da;
+  }
+}

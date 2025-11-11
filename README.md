@@ -1,288 +1,192 @@
-[![@coreui angular](https://img.shields.io/badge/@coreui%20-angular-lightgrey.svg?style=flat-square)](https://github.com/coreui/angular)
-[![npm-coreui-angular][npm-coreui-angular-badge]][npm-coreui-angular]
-[![npm-coreui-angular][npm-coreui-angular-badge-next]][npm-coreui-angular]
-[![NPM downloads][npm-coreui-angular-download]][npm-coreui-angular]  
-[![@coreui coreui](https://img.shields.io/badge/@coreui%20-coreui-lightgrey.svg?style=flat-square)](https://github.com/coreui/coreui)
-[![npm package][npm-coreui-badge]][npm-coreui]
-[![NPM downloads][npm-coreui-download]][npm-coreui]  
-![angular](https://img.shields.io/badge/angular-^20.3.0-lightgrey.svg?style=flat-square&logo=angular)
+# 🌐 Frontend del Concesionario de Autos (Angular)
 
-[npm-coreui-angular]: https://www.npmjs.com/package/@coreui/angular
+Este proyecto es el **frontend web del sistema de concesionario de autos**, desarrollado en **Angular 17**.
+Consume la API creada en FastAPI y permite manejar:
 
-[npm-coreui-angular-badge]: https://img.shields.io/npm/v/@coreui/angular.png?style=flat-square
+✅ Clientes
+✅ Empleados
+✅ Administradores
+✅ Autos
+✅ Facturas
+✅ Mantenimientos
 
-[npm-coreui-angular-badge-next]: https://img.shields.io/npm/v/@coreui/angular/next?style=flat-square&color=red
+La interfaz permite **listar, registrar, filtrar y eliminar datos** gracias a una comunicación en tiempo real con el backend.
 
-[npm-coreui-angular-download]: https://img.shields.io/npm/dm/@coreui/angular.svg?style=flat-square
+---
 
-[npm-coreui]: https://www.npmjs.com/package/@coreui/coreui
+## 📂 Estructura del Proyecto
 
-[npm-coreui-badge]: https://img.shields.io/npm/v/@coreui/coreui.png?style=flat-square
+```
+frontend/
+│── src/
+│   ├── app/
+│   │   ├── services/             # Servicios para consumir la API
+│   │   ├── modules/              # Componentes organizados por entidad
+│   │   │   ├── clientes/
+│   │   │   ├── empleados/
+│   │   │   ├── autos/
+│   │   │   ├── admin/
+│   │   ├── layout/               # Plantillas y diseño del dashboard
+│   │   ├── models/               # Interfaces TypeScript
+│   │   ├── environments/         # Configuración de URLs API
+│   ├── assets/
+│   ├── index.html
+│   ├── main.ts
+│
+│── package.json                  # Dependencias y scripts
+│── angular.json                  # Configuración del proyecto Angular
+│── README.md
+```
 
-[npm-coreui-download]: https://img.shields.io/npm/dm/@coreui/coreui.svg?style=flat-square
+---
 
-# CoreUI Free Admin Dashboard Template for Angular 20
+## ✅ Requisitos Previos
 
-CoreUI is meant to be the UX game changer. Pure & transparent code is devoid of redundant components, so the app is light enough to offer ultimate user
-experience. This means mobile devices also, where the navigation is just as easy and intuitive as on a desktop or laptop. The CoreUI Layout API lets you
-customize your project for almost any device – be it Mobile, Web or WebApp – CoreUI covers them all!
+* Node.js **16+**
+* Angular CLI
+* Backend corriendo en `http://localhost:8000`
 
-- [CoreUI Angular Admin Dashboard Template & UI Components Library](https://coreui.io/angular)
-- [CoreUI Angular Demo](https://coreui.io/angular/demo/5.0/free/)
-- [CoreUI Angular Docs](https://coreui.io/angular/docs/)
-
-## Table of Contents
-
-* [Versions](#versions)
-* [CoreUI Pro](#coreui-pro)
-* [Quick Start](#quick-start)
-* [Installation](#installation)
-* [Basic usage](#basic-usage)
-* [What's included](#whats-included)
-* [Documentation](#documentation)
-* [Versioning](#versioning)
-* [Creators](#creators)
-* [Community](#community)
-* [Copyright and License](#copyright-and-license)
-
-## Versions
-
-* [CoreUI Free Bootstrap Admin Template](https://github.com/coreui/coreui-free-bootstrap-admin-template)
-* [CoreUI Free Angular Admin Template](https://github.com/coreui/coreui-free-angular-admin-template)
-* [CoreUI Free React.js Admin Template](https://github.com/coreui/coreui-free-react-admin-template)
-* [CoreUI Free Vue.js Admin Template](https://github.com/coreui/coreui-free-vue-admin-template)
-
-## CoreUI Pro
-
-* 💪  [CoreUI Pro Angular Admin Template](https://coreui.io/product/angular-dashboard-template/)
-* 💪  [CoreUI Pro Bootstrap Admin Template](https://coreui.io/product/bootstrap-dashboard-template/)
-* 💪  [CoreUI Pro React Admin Template](https://coreui.io/product/react-dashboard-template/)
-* 💪  [CoreUI Pro Next.js Admin Template](https://coreui.io/product/next-js-dashboard-template/)
-* 💪  [CoreUI Pro Vue Admin Template](https://coreui.io/product/vue-dashboard-template/)
-
-## CoreUI PRO Angular Admin Templates
-
-| Default Theme                                                                                                                                                                      | Light Theme                                                                                                                                                                    |
-|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [![CoreUI PRO Angular Admin Template](https://coreui.io/images/templates/coreui_pro_default_light_dark.webp)](https://coreui.io/product/angular-dashboard-template/?theme=default) | [![CoreUI PRO Angular Admin Template](https://coreui.io/images/templates/coreui_pro_light_light_dark.webp)](https://coreui.io/product/angular-dashboard-template/?theme=light) |
-
-| Modern Theme                                                                                                                                                                             | Bright Theme                                                                                                                                                                    |
-|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [![CoreUI PRO Angular Admin Template](https://coreui.io/images/templates/coreui_pro_default_v3_light_dark.webp)](https://coreui.io/product/angular-dashboard-template/?theme=default-v3) | [![CoreUI PRO React Admin Template](https://coreui.io/images/templates/coreui_pro_light_v3_light_dark.webp)](https://coreui.io/product/angular-dashboard-template/?theme=light) |
-
-## Quick Start
-
-- [Download the latest release](https://github.com/coreui/coreui-free-angular-admin-template/)
-- Clone the repo: `git clone https://github.com/coreui/coreui-free-angular-admin-template.git`
-
-#### <i>Prerequisites</i>
-
-Before you begin, make sure your development environment includes `Node.js®` and an `npm` package manager.
-
-###### Node.js
-
-[**Angular 20**](https://angular.io/guide/what-is-angular) requires `Node.js` LTS version `^20.19.0 || ^22.12.0 || ^24.0.0`.
-
-- To check your version, run `node -v` in a terminal/console window.
-- To get `Node.js`, go to [nodejs.org](https://nodejs.org/).
-
-###### Angular CLI
-
-Install the Angular CLI globally using a terminal/console window.
+Instalar Angular CLI (si no lo tienes):
 
 ```bash
 npm install -g @angular/cli
 ```
 
-### Installation
+---
 
-``` bash
-$ npm install
-$ npm update
-```
+## 📦 Instalación
 
-### Basic usage
-
-``` bash
-# dev server with hot reload at http://localhost:4200
-$ npm start
-```
-
-Navigate to [http://localhost:4200](http://localhost:4200). The app will automatically reload if you change any of the source files.
-
-#### Build
-
-Run `build` to build the project. The build artifacts will be stored in the `dist/` directory.
+1. Entrar al proyecto
 
 ```bash
-# build for production with minification
-$ npm run build
+cd frontend
 ```
 
-## What's included
+2. Instalar dependencias
 
-Within the download you'll find the following directories and files, logically grouping common assets and providing both compiled and minified variations.
-You'll see something like this:
-
+```bash
+npm install
 ```
-coreui-free-angular-admin-template
-├── src/                         # project root
-│   ├── app/                     # main app directory
-|   │   ├── icons/               # icons set for the app
-|   │   ├── layout/              # layout 
-|   |   │   └── default-layout/  # layout components
-|   |   |       └── _nav.js      # sidebar navigation config
-|   │   └── views/               # application views
-│   ├── assets/                  # images, icons, etc.
-│   ├── components/              # components for demo only
-│   ├── scss/                    # scss styles
-│   └── index.html               # html template
-│
-├── angular.json
-├── README.md
-└── package.json
-```
-
-## Documentation
-
-The documentation for the CoreUI Admin Template is hosted at our website [CoreUI for Angular](https://coreui.io/angular/)
 
 ---
 
-## Versioning
+## 🔗 Configuración de la API
 
-For transparency into our release cycle and in striving to maintain backward compatibility, CoreUI Free Admin Template is maintained
-under [the Semantic Versioning guidelines](http://semver.org/).
+El proyecto usa un archivo de entorno para conectarse con FastAPI:
 
-See [the Releases section of our project](https://github.com/coreui/coreui-free-angular-admin-template/releases) for changelogs for each release version.
+📍 `src/app/environments/environments.ts`
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.0.2.
+Ejemplo configurado:
 
-## Development server
+```ts
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:8000'
+};
+```
 
-To start a local development server, run:
+Si tu backend corre en otra dirección, cámbiala aquí.
+
+✅ Gracias a esto, Angular puede consumir los endpoints:
+
+* `GET /clientes`
+* `GET /empleados`
+* `GET /autos`
+* `DELETE /clientes/{id}`
+* etc.
+
+---
+
+## 🚀 Ejecutar el proyecto
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Ir al navegador:
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```
+http://localhost:4200
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+✅ Se mostrará el panel administrativo donde podrás navegar por el menú lateral y gestionar entidades.
 
-```bash
-ng generate --help
+---
+
+## 🧩 Funcionalidades Principales
+
+| Módulo              | Funciones disponibles                       |
+| ------------------- | ------------------------------------------- |
+| **Clientes**        | Listar, buscar, crear, eliminar             |
+| **Empleados**       | Listar, registrar, eliminar                 |
+| **Autos**           | Mostrar autos disponibles, vender, eliminar |
+| **Administradores** | Gestión básica de usuarios admins           |
+| **Facturas**        | Consultar ventas registradas                |
+| **Mantenimientos**  | Registrar y consultar servicios realizados  |
+
+---
+
+## 🔧 Comunicación con Backend
+
+El frontend se comunica mediante **servicios Angular** ubicados en:
+
+```
+src/app/services/
 ```
 
-## Building
+Ejemplo de llamada:
 
-To build the project run:
-
-```bash
-ng build
+```ts
+listarClientes() {
+  return this.http.get<Cliente[]>(`${environment.apiUrl}/clientes`);
+}
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Cada módulo usa **Reactive Forms**, validaciones y modales para crear o editar registros.
 
-## Running unit tests
+---
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+## ✅ Conexión exitosa con el Backend FastAPI
 
-```bash
-ng test
+Para que Angular pueda comunicarse con Python, en el backend se habilitó CORS:
+
+```python
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 ```
 
-## Running end-to-end tests
+Sin esto, el navegador bloqueaba las peticiones de Angular.
 
-For end-to-end (e2e) testing, run:
+---
 
-```bash
-ng e2e
-```
+## 🧪 Pruebas
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+* Abrir consola del navegador (F12 → Console)
+* Navegar por clientes, autos, empleados
+* Ver llamadas exitosas a `http://localhost:8000/...`
 
-## Additional Resources
+Si aparece un error CORS o 404, revisar:
+✅ Backend encendido
+✅ URL correcta en `environments.ts`
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+---
 
-## Creators
+## 👨‍💻 Autores
 
-**Łukasz Holeczek**
+* Juan Pablo Gutiérrez Vargas
+* Juan Felipe Ospina Agudelo
 
-* <https://twitter.com/lukaszholeczek>
-* <https://github.com/mrholek>
-* <https://github.com/coreui>
+---
 
-**CoreUI team**
+## 📜 Licencia
 
-* https://github.com/orgs/coreui/people
+Proyecto académico desarrollado con fines educativos.
 
-## Community
-
-Get updates on CoreUI's development and chat with the project maintainers and community members.
-
-- Follow [@core_ui on Twitter](https://twitter.com/core_ui).
-- Read and subscribe to [CoreUI Blog](https://coreui.io/blog/).
-
-## Support CoreUI Development
-
-CoreUI is an MIT-licensed open source project and is completely free to use. However, the amount of effort needed to maintain and develop new features for the
-project is not sustainable without proper financial backing. You can support development by buying the [CoreUI PRO](https://coreui.io/pricing/) or by becoming a
-sponsor via [Open Collective](https://opencollective.com/coreui/).
-
-<!--- StartOpenCollectiveBackers -->
-
-### Platinum Sponsors
-
-Support this project by [becoming a Platinum Sponsor](https://opencollective.com/coreui/contribute/platinum-sponsor-40959/). A large company logo will be added
-here with a link to your website.
-
-<a href="https://opencollective.com/coreui/contribute/platinum-sponsor-40959/checkout"><img src="https://opencollective.com/coreui/tiers/platinum-sponsor/0/avatar.svg?avatarHeight=100"></a>
-
-### Gold Sponsors
-
-Support this project by [becoming a Gold Sponsor](https://opencollective.com/coreui/contribute/gold-sponsor-40960/). A big company logo will be added here with
-a link to your website.
-
-<a href="https://opencollective.com/coreui/contribute/gold-sponsor-40960/checkout"><img src="https://opencollective.com/coreui/tiers/gold-sponsor/0/avatar.svg?avatarHeight=100"></a>
-
-### Silver Sponsors
-
-Support this project by [becoming a Silver Sponsor](https://opencollective.com/coreui/contribute/silver-sponsor-40967/). A medium company logo will be added
-here with a link to your website.
-
-<a href="https://opencollective.com/coreui/contribute/silver-sponsor-40967/checkout"><img src="https://opencollective.com/coreui/tiers/gold-sponsor/0/avatar.svg?avatarHeight=100"></a>
-
-### Bronze Sponsors
-
-Support this project by [becoming a Bronze Sponsor](https://opencollective.com/coreui/contribute/bronze-sponsor-40966/). The company avatar will show up here
-with a link to your OpenCollective Profile.
-
-<a href="https://opencollective.com/coreui/contribute/bronze-sponsor-40966/checkout"><img src="https://opencollective.com/coreui/tiers/bronze-sponsor/0/avatar.svg?avatarHeight=100"></a>
-
-### Backers
-
-Thanks to all the backers and sponsors! Support this project by [becoming a backer](https://opencollective.com/coreui/contribute/backer-40965/).
-
-<a href="https://opencollective.com/coreui/contribute/backer-40965/checkout" target="_blank" rel="noopener"><img src="https://opencollective.com/coreui/backers.svg?width=890"></a>
-
-<!--- EndOpenCollectiveBackers -->
-
-## Copyright and License
-
-copyright 2025 creativeLabs Łukasz Holeczek.
-
-Code released under [the MIT license](https://github.com/coreui/coreui-free-react-admin-template/blob/master/LICENSE).
-There is only one limitation you can't re-distribute the CoreUI as stock. You can’t do this if you modify the CoreUI. In the past, we faced some problems with
-persons who tried to sell CoreUI based templates.
-#   C o n c e s i o n a r i o _ F r o n t e n d  
- 
+---
