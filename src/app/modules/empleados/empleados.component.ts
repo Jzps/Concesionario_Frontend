@@ -38,9 +38,12 @@ export class EmpleadosComponent implements OnInit {
     this.empleadoForm = this.fb.group({
       nombre: ['', Validators.required],
       apellido: ['', Validators.required],
-      dni: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+      dni: ['', [Validators.required, Validators.pattern('^[0-9]{8,10}$')]],
       correo: ['', [Validators.required, Validators.email]],
-      telefono: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+      telefono: [
+        '',
+        [Validators.required, Validators.pattern('^[0-9]{7,10}$')],
+      ],
       fecha_contratacion: ['', Validators.required],
     });
 
@@ -70,15 +73,14 @@ export class EmpleadosComponent implements OnInit {
     if (vista === 'VENDEDORES') {
       this.empleadosService.listarVendedores().subscribe({
         next: (data) => {
-          console.log('Respuesta vendedores:', data);
-          this.empleados = data;
+          this.empleados = Array.isArray(data) ? data : [];
         },
         error: () => this.showMessageModal('Error cargando vendedores'),
       });
     } else if (vista === 'TECNICOS') {
       this.empleadosService.listarTecnicos().subscribe({
         next: (data) => {
-          this.empleados = data;
+          this.empleados = Array.isArray(data) ? data : [];
         },
         error: () => this.showMessageModal('Error cargando técnicos'),
       });
@@ -90,6 +92,7 @@ export class EmpleadosComponent implements OnInit {
   nuevoEmpleado() {
     this.modalTitle = 'Registrar Empleado';
     this.empleadoForm.reset();
+    this.empleadoIdSeleccionado = null;
   }
 
   guardarEmpleado() {
@@ -97,13 +100,25 @@ export class EmpleadosComponent implements OnInit {
 
     const data = this.empleadoForm.value;
 
-    this.empleadosService.crearEmpleado(data).subscribe({
-      next: () => {
-        this.showMessageModal('Empleado registrado con éxito');
-        this.cargarEmpleados();
-      },
-      error: () => this.showMessageModal('Error registrando empleado'),
-    });
+    if (this.empleadoIdSeleccionado) {
+      this.empleadosService
+        .actualizarEmpleado(this.empleadoIdSeleccionado, data)
+        .subscribe({
+          next: () => {
+            this.showMessageModal('Empleado actualizado con éxito');
+            this.cargarEmpleados();
+          },
+          error: () => this.showMessageModal('Error actualizando empleado'),
+        });
+    } else {
+      this.empleadosService.crearEmpleado(data).subscribe({
+        next: () => {
+          this.showMessageModal('Empleado creado con éxito');
+          this.cargarEmpleados();
+        },
+        error: () => this.showMessageModal('Error creando empleado'),
+      });
+    }
   }
 
   editarEmpleado(id: string) {
@@ -112,8 +127,9 @@ export class EmpleadosComponent implements OnInit {
         this.modalTitle = 'Editar Empleado';
         this.empleadoForm.patchValue(empleado);
         this.empleadoIdSeleccionado = id;
+        this.showModal('empleadoModal');
       },
-      error: () => this.showMessageModal('No fue posible cargar los datos'),
+      error: () => this.showMessageModal('Error cargando datos del empleado'),
     });
   }
 
@@ -131,7 +147,7 @@ export class EmpleadosComponent implements OnInit {
         this.showMessageModal('Empleado asignado como vendedor');
         this.cargarEmpleados();
       },
-      error: () => this.showMessageModal('Error asignando rol'),
+      error: () => this.showMessageModal('Error asignando rol de vendedor'),
     });
   }
 
@@ -144,16 +160,22 @@ export class EmpleadosComponent implements OnInit {
         this.showMessageModal('Empleado asignado como técnico');
         this.cargarEmpleados();
       },
-      error: () => this.showMessageModal('Error asignando rol'),
+      error: () => this.showMessageModal('Error asignando rol de técnico'),
     });
   }
 
-  eliminarEmpleado(id: string) {
-    if (!confirm('¿Eliminar empleado?')) return;
+  empleadoAEliminar: string | null = null;
 
-    this.empleadosService.eliminarEmpleado(id).subscribe({
+  pedirConfirmacion(id: string) {
+    this.empleadoAEliminar = id;
+    this.showModal('confirmModal');
+  }
+
+  confirmarEliminar() {
+    if (!this.empleadoAEliminar) return;
+    this.empleadosService.eliminarEmpleado(this.empleadoAEliminar).subscribe({
       next: () => {
-        this.showMessageModal('Empleado eliminado');
+        this.showMessageModal('Empleado eliminado con éxito');
         this.cargarEmpleados();
       },
       error: () => this.showMessageModal('Error eliminando empleado'),
@@ -170,6 +192,8 @@ export class EmpleadosComponent implements OnInit {
   private showMessageModal(msg: string) {
     this.messageModalText = msg;
     const el = document.getElementById('messageModal');
-    (window as any).bootstrap.Modal.getOrCreateInstance(el).show();
+    if (el) {
+      (window as any).bootstrap.Modal.getOrCreateInstance(el).show();
+    }
   }
 }
