@@ -32,7 +32,7 @@ export class MantenimientosComponent implements OnInit {
   mantenimientoIdToDelete: string | null = null;
 
   mantenimientos: Mantenimiento[] = [];
-  filteredMantenimientos: any[] = [];
+  filteredMantenimientos: Mantenimiento[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -56,11 +56,9 @@ export class MantenimientosComponent implements OnInit {
     this.mantenimientoService.listarMantenimientos().subscribe({
       next: (data) => {
         this.mantenimientos = data;
-        this.filteredMantenimientos = [...this.mantenimientos];
-        console.log('Mantenimientos cargados:', data);
+        this.filteredMantenimientos = [...data];
       },
-      error: (err) => {
-        console.error('Error al cargar mantenimientos:', err);
+      error: () => {
         this.showMessageModal('Error al cargar los mantenimientos.');
       },
     });
@@ -68,17 +66,15 @@ export class MantenimientosComponent implements OnInit {
 
   filtrarMantenimientos(): void {
     const term = this.filtro.toLowerCase().trim();
-    if (!term) {
-      this.filteredMantenimientos = [...this.mantenimientos];
-      return;
-    }
 
-    this.filteredMantenimientos = this.mantenimientos.filter(
-      (m) =>
-        m.id?.toLowerCase().includes(term) ||
-        m.auto_id.toLowerCase().includes(term) ||
-        (m as any).detalle?.toLowerCase().includes(term)
-    );
+    this.filteredMantenimientos = term
+      ? this.mantenimientos.filter(
+          (m) =>
+            m.id?.toLowerCase().includes(term) ||
+            m.auto_id.toLowerCase().includes(term) ||
+            m.detalle.toLowerCase().includes(term)
+        )
+      : [...this.mantenimientos];
   }
 
   crearMantenimiento(): void {
@@ -94,52 +90,63 @@ export class MantenimientosComponent implements OnInit {
       return;
     }
 
-    const formData = this.mantenimientoForm.getRawValue();
+    const data = this.mantenimientoForm.getRawValue();
+
     const nuevoMantenimiento: Mantenimiento = {
-      descripcion: formData.detalle,
-      fecha: formData.fecha,
-      costo: formData.costo,
-      empleado_id: formData.empleado_id,
-      auto_id: formData.auto_id,
+      detalle: data.detalle,
+      fecha: data.fecha,
+      costo: data.costo,
+      empleado_id: data.empleado_id,
+      auto_id: data.auto_id,
+      cliente_id: data.cliente_id,
     };
 
     this.mantenimientoService.crearMantenimiento(nuevoMantenimiento).subscribe({
-      next: (response) => {
-        console.log('Mantenimiento creado:', response);
+      next: () => {
         this.showMessageModal('Mantenimiento registrado exitosamente.');
         this.cargarMantenimientos();
-        this.mantenimientoForm.reset();
+        this.mantenimientoForm.reset({
+          fecha: new Date().toISOString().split('T')[0],
+          costo: 0,
+        });
       },
-      error: (err) => {
-        console.error('Error al crear mantenimiento:', err);
+      error: () => {
         this.showMessageModal('Error al registrar el mantenimiento.');
       },
     });
   }
 
-  eliminarMantenimiento(id: string): void {
-    if (!confirm('¿Seguro que deseas eliminar este mantenimiento?')) return;
-
-    this.mantenimientoService.eliminarMantenimiento(id).subscribe({
-      next: () => {
-        this.showMessageModal(
-          `Mantenimiento con ID ${id} eliminado correctamente.`
-        );
-        this.cargarMantenimientos();
-      },
-      error: (err) => {
-        console.error('Error al eliminar mantenimiento:', err);
-        this.showMessageModal('Error al eliminar el mantenimiento.');
-      },
-    });
+  pedirConfirmacion(id: string): void {
+    this.mantenimientoIdToDelete = id;
+    const modal = document.getElementById('confirmModal');
+    if (modal) {
+      (window as any).bootstrap.Modal.getOrCreateInstance(modal).show();
+    }
   }
 
   confirmarEliminar(): void {
-    console.log('Confirmar eliminar (por implementar)');
+    if (!this.mantenimientoIdToDelete) return;
+
+    this.mantenimientoService
+      .eliminarMantenimiento(this.mantenimientoIdToDelete)
+      .subscribe({
+        next: () => {
+          this.showMessageModal('Mantenimiento eliminado correctamente.');
+          this.cargarMantenimientos();
+        },
+        error: () => {
+          this.showMessageModal('Error al eliminar el mantenimiento.');
+        },
+      });
+
+    this.mantenimientoIdToDelete = null;
   }
 
   private showMessageModal(message: string): void {
     this.messageModalText = message;
-    console.log(`[Message Modal] ${message}`);
+    const modal = document.getElementById('messageModal');
+    if (modal) {
+      (window as any).bootstrap.Modal.getOrCreateInstance(modal).show();
+    }
   }
 }

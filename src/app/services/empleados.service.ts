@@ -4,14 +4,18 @@ import { ApiService } from './api.service';
 
 export interface Empleado {
   id?: string;
-  nombre: string;
-  apellido: string;
-  dni: string;
-  correo: string;
-  telefono: string;
+  empleado_id?: string;
+  nombre?: string;
+  nombre_empleado?: string;
+  apellido?: string;
+  apellido_empleado?: string;
+  dni?: string;
+  correo?: string;
+  telefono?: string;
   cargo?: string;
   salario?: number;
   fecha_contratacion?: string;
+  tipo_carro?: string;
 }
 
 export interface Vendedor {

@@ -9,6 +9,8 @@ import {
 } from '@angular/forms';
 import { Cliente, ClientesService } from '../../services/clientes.service';
 
+declare var bootstrap: any;
+
 @Component({
   selector: 'app-clientes',
   standalone: true,
@@ -19,11 +21,14 @@ import { Cliente, ClientesService } from '../../services/clientes.service';
 export class ClientesComponent implements OnInit {
   filtro = '';
   clienteForm!: FormGroup;
-  messageModalText: string = '';
+  messageModalText = '';
   clienteIdToDelete: string | null = null;
 
   clientes: Cliente[] = [];
   filteredClientes: Cliente[] = [];
+
+  modoEdicion = false;
+  clienteEditandoId: string | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -32,12 +37,12 @@ export class ClientesComponent implements OnInit {
 
   ngOnInit(): void {
     this.clienteForm = this.fb.group({
-      nombre: ['', [Validators.required]],
-      apellido: ['', [Validators.required]],
+      nombre: ['', Validators.required],
+      apellido: ['', Validators.required],
       dni: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
       correo: ['', [Validators.required, Validators.email]],
       telefono: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
-      direccion: ['', [Validators.required]],
+      direccion: ['', Validators.required],
     });
 
     this.cargarClientes();
@@ -49,89 +54,115 @@ export class ClientesComponent implements OnInit {
         this.clientes = data;
         this.filteredClientes = [...this.clientes];
       },
-      error: (err) => {
-        console.error('Error al cargar clientes:', err);
-        this.showMessageModal('Error al cargar los clientes desde la API.');
+      error: () => {
+        this.showMessageModal('Error al cargar los clientes.');
       },
     });
   }
 
   filtrarClientes() {
-    const term = this.filtro.toLowerCase().trim();
-
-    if (!term) {
-      this.filteredClientes = [...this.clientes];
-      return;
-    }
-
+    const term = this.filtro.toLowerCase();
     this.filteredClientes = this.clientes.filter(
-      (cliente) =>
-        cliente.nombre.toLowerCase().includes(term) ||
-        cliente.apellido.toLowerCase().includes(term) ||
-        (cliente.correo && cliente.correo.toLowerCase().includes(term)) ||
-        (cliente.dni && cliente.dni.includes(term))
+      (c) =>
+        c.nombre.toLowerCase().includes(term) ||
+        c.apellido.toLowerCase().includes(term) ||
+        c.correo.toLowerCase().includes(term) ||
+        c.dni.includes(term)
     );
   }
 
   crearCliente() {
+    this.modoEdicion = false;
     this.clienteForm.reset();
+
+    const modal = new bootstrap.Modal(document.getElementById('clienteModal'));
+    modal.show();
   }
 
   guardarCliente() {
-    if (this.clienteForm.valid) {
-      const nuevoCliente: Cliente = { ...this.clienteForm.value };
-
-      this.clientesService.crearCliente(nuevoCliente).subscribe({
-        next: () => {
-          this.showMessageModal('Cliente creado exitosamente.');
-          this.cargarClientes();
-          this.clienteForm.reset();
-        },
-        error: (err) => {
-          console.error('Error al crear cliente:', err);
-          this.showMessageModal('Error al crear cliente.');
-        },
-      });
-    } else {
+    if (!this.clienteForm.valid) {
       this.clienteForm.markAllAsTouched();
+      return;
     }
+
+    if (this.modoEdicion && this.clienteEditandoId) {
+      this.clientesService
+        .actualizarCliente(this.clienteEditandoId, this.clienteForm.value)
+        .subscribe({
+          next: () => {
+            this.showMessageModal('Cliente actualizado correctamente.');
+            this.cargarClientes();
+
+            const modal = bootstrap.Modal.getInstance(
+              document.getElementById('clienteModal')
+            );
+            modal.hide();
+          },
+          error: () => {
+            this.showMessageModal('Error al actualizar cliente.');
+          },
+        });
+      return;
+    }
+
+    this.clientesService.crearCliente(this.clienteForm.value).subscribe({
+      next: () => {
+        this.showMessageModal('Cliente creado exitosamente.');
+        this.cargarClientes();
+
+        const modal = bootstrap.Modal.getInstance(
+          document.getElementById('clienteModal')
+        );
+        modal.hide();
+      },
+      error: () => {
+        this.showMessageModal('Error al crear cliente.');
+      },
+    });
   }
 
   editarCliente(id: string) {
-    this.showMessageModal(
-      `Función de edición pendiente para el cliente con ID: ${id}`
-    );
+    this.modoEdicion = true;
+    this.clienteEditandoId = id;
+
+    // traemos el cliente completo
+    this.clientesService.obtenerClientePorId(id).subscribe({
+      next: (cliente) => {
+        this.clienteForm.patchValue(cliente);
+
+        const modal = new bootstrap.Modal(
+          document.getElementById('clienteModal')
+        );
+        modal.show();
+      },
+      error: () => this.showMessageModal('Error al cargar datos del cliente.'),
+    });
   }
 
   eliminarCliente(id: string) {
     this.clienteIdToDelete = id;
-    this.showConfirmModal();
+
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
   }
 
   confirmarEliminar() {
-    if (this.clienteIdToDelete) {
-      this.clientesService.eliminarCliente(this.clienteIdToDelete).subscribe({
-        next: () => {
-          this.showMessageModal('Cliente eliminado correctamente.');
-          this.cargarClientes();
-          this.clienteIdToDelete = null;
-        },
-        error: (err) => {
-          console.error('Error al eliminar cliente:', err);
-          this.showMessageModal('Error al eliminar cliente.');
-        },
-      });
-    }
+    if (!this.clienteIdToDelete) return;
+
+    this.clientesService.eliminarCliente(this.clienteIdToDelete).subscribe({
+      next: () => {
+        this.showMessageModal('Cliente eliminado correctamente.');
+        this.cargarClientes();
+      },
+      error: () => {
+        this.showMessageModal('Error al eliminar cliente.');
+      },
+    });
   }
 
-  private showMessageModal(message: string): void {
+  showMessageModal(message: string) {
     this.messageModalText = message;
-    console.log(`[Message Modal] ${message}`);
-  }
-
-  private showConfirmModal(): void {
-    console.log(
-      `[Confirm Modal] Solicitud de eliminación para ${this.clienteIdToDelete}`
-    );
+    const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+    modal.show();
   }
 }

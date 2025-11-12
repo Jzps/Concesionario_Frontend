@@ -30,9 +30,7 @@
         <tr>
           <th>ID</th>
           <th>Usuario</th>
-          <th>Email</th>
-          <th>Rol</th>
-          <th>Fecha Creación</th>
+          <th>Clave</th>
           <th class="text-center">Acciones</th>
         </tr>
       </thead>
@@ -40,9 +38,7 @@
         <tr *ngFor="let admin of filteredAdmins">
           <td>{{ admin.id }}</td>
           <td>{{ admin.username }}</td>
-          <td>{{ admin.email }}</td>
-          <td>{{ admin.rol }}</td>
-          <td>{{ admin.fechaCreacion | date : "dd/MM/yyyy" }}</td>
+          <td>{{ admin.password }}</td>
           <td class="text-center">
             <button
               class="btn btn-sm btn-danger"
@@ -52,6 +48,7 @@
             </button>
           </td>
         </tr>
+
         <tr *ngIf="filteredAdmins.length === 0">
           <td colspan="6" class="text-center py-4 text-muted">
             No se encontraron administradores que coincidan con la búsqueda.
@@ -86,43 +83,23 @@
       <form [formGroup]="adminForm" (ngSubmit)="guardarAdmin()">
         <div class="modal-body">
           <div class="mb-3">
-            <label for="username" class="form-label">Nombre de usuario</label>
+            <label class="form-label">Nombre de usuario</label>
             <input
               type="text"
               class="form-control"
-              id="username"
               formControlName="username"
-              placeholder="Ejemplo: juanp_admin"
+              placeholder="Ejemplo: juan_admin"
             />
-            <div
-              *ngIf="
-                adminForm.get('username')?.invalid &&
-                adminForm.get('username')?.touched
-              "
-              class="text-danger mt-1"
-            >
-              El nombre de usuario es obligatorio (mínimo 4 caracteres).
-            </div>
           </div>
 
           <div class="mb-3">
-            <label for="password" class="form-label">Contraseña</label>
+            <label class="form-label">Contraseña</label>
             <input
               type="password"
               class="form-control"
-              id="password"
               formControlName="password"
               placeholder="Contraseña segura"
             />
-            <div
-              *ngIf="
-                adminForm.get('password')?.invalid &&
-                adminForm.get('password')?.touched
-              "
-              class="text-danger mt-1"
-            >
-              La contraseña es obligatoria (mínimo 6 caracteres).
-            </div>
           </div>
         </div>
 

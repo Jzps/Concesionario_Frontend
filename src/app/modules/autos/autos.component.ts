@@ -9,12 +9,14 @@ import {
 } from '@angular/forms';
 import { Auto, AutosService } from '../../services/autos.service';
 
+declare var bootstrap: any;
+
 @Component({
   selector: 'app-autos',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './autos.component.html',
-  styleUrls: ['../clientes/clientes.component.scss'],
+  styleUrls: ['./autos.component.scss'],
 })
 export class AutosComponent implements OnInit {
   filtro = '';
@@ -23,33 +25,34 @@ export class AutosComponent implements OnInit {
   messageModalText: string = '';
   autoIdToDelete: string | null = null;
 
-  todosLosAutos: Auto[] = [];
+  autoEditandoId: string | null = null;
+
+  autos: Auto[] = [];
 
   constructor(private fb: FormBuilder, private autosService: AutosService) {}
 
   ngOnInit(): void {
     this.autoForm = this.fb.group({
-      name: ['', Validators.required],
-      description: [''],
       tipo: ['', Validators.required],
       marca: ['', Validators.required],
       modelo: ['', Validators.required],
       precio: [0, [Validators.required, Validators.min(1)]],
-      kilometraje: [null, [Validators.min(0)]],
-      autonomia: [null, [Validators.min(0)]],
+      kilometraje: [null],
+      autonomia: [null],
     });
 
     this.cargarAutos();
   }
 
-  crearAuto() {
-    this.autoForm.reset();
-  }
-
   get autosMostrados(): Auto[] {
-    return this.todosLosAutos.filter(
+    return this.autos.filter(
       (a) => a.estado === (this.mostrandoVendidos ? 'VENDIDO' : 'DISPONIBLE')
     );
+  }
+
+  alternarVista() {
+    this.mostrandoVendidos = !this.mostrandoVendidos;
+    this.cargarAutos();
   }
 
   cargarAutos() {
@@ -58,101 +61,113 @@ export class AutosComponent implements OnInit {
       : this.autosService.listarAutos();
 
     request.subscribe({
-      next: (data) => {
-        this.todosLosAutos = data.map((auto) => ({
-          id: auto.id ?? '',
-          name: `${auto.marca} ${auto.modelo}`,
-          description: '',
-          tipo: auto.tipo ?? 'Desconocido',
+      next: (data: any[]) => {
+        this.autos = data.map((auto) => ({
+          id: auto.id,
+          tipo: auto.tipo,
           marca: auto.marca,
           modelo: auto.modelo,
           precio: auto.precio,
-          kilometraje: auto.kilometraje,
-          autonomia: auto.autonomia,
-          estado:
-            auto.estado?.toUpperCase() === 'VENDIDO' ? 'VENDIDO' : 'DISPONIBLE',
+          kilometraje:
+            auto.tipo.toLowerCase().includes('usado') &&
+            auto.kilometraje !== null
+              ? Number(auto.kilometraje)
+              : null,
+          autonomia:
+            auto.tipo.toLowerCase().includes('electrico') &&
+            auto.autonomia !== null
+              ? Number(auto.autonomia)
+              : null,
+          estado: auto.vendido ? 'VENDIDO' : 'DISPONIBLE',
         }));
-        console.log('Autos cargados:', this.todosLosAutos);
       },
-      error: (err) => {
-        console.error('Error al obtener autos:', err);
-        this.showMessageModal('Error al cargar los autos desde la API.');
-      },
+      error: () => this.showMessageModal('Error cargando autos'),
+    });
+  }
+
+  crearAuto() {
+    this.autoEditandoId = null;
+    this.autoForm.reset();
+  }
+
+  editarAuto(auto: Auto) {
+    this.autoEditandoId = auto.id ?? null;
+
+    this.autoForm.patchValue({
+      tipo: auto.tipo,
+      marca: auto.marca,
+      modelo: auto.modelo,
+      precio: auto.precio,
+      kilometraje: auto.kilometraje,
+      autonomia: auto.autonomia,
     });
   }
 
   guardarAuto() {
-    if (this.autoForm.valid) {
-      const { tipo, marca, modelo, precio, kilometraje, autonomia } =
-        this.autoForm.value;
+    if (!this.autoForm.valid) return;
 
+    const { tipo, marca, modelo, precio, kilometraje, autonomia } =
+      this.autoForm.value;
+
+    if (this.autoEditandoId) {
+      this.autosService
+        .actualizarAuto(this.autoEditandoId, {
+          tipo,
+          marca,
+          modelo,
+          precio,
+          kilometraje,
+          autonomia,
+        })
+        .subscribe({
+          next: () => {
+            this.showMessageModal('Auto actualizado exitosamente.');
+            this.cargarAutos();
+          },
+          error: () => this.showMessageModal('Error al actualizar el auto.'),
+        });
+    } else {
       this.autosService
         .comprarAuto(tipo, marca, modelo, precio, kilometraje, autonomia)
         .subscribe({
           next: () => {
-            this.showMessageModal('Auto agregado exitosamente al inventario.');
+            this.showMessageModal('Auto agregado exitosamente.');
             this.cargarAutos();
-            this.autoForm.reset();
           },
-          error: (err) => {
-            console.error('Error al agregar auto:', err);
-            this.showMessageModal('Error al registrar el auto.');
-          },
+          error: () => this.showMessageModal('Error al registrar el auto.'),
         });
-    } else {
-      this.autoForm.markAllAsTouched();
     }
   }
 
   venderAuto(id: string) {
     this.autosService.venderAuto(id).subscribe({
       next: () => {
-        this.showMessageModal('El auto ha sido marcado como vendido.');
+        this.showMessageModal('Auto vendido correctamente.');
         this.cargarAutos();
       },
-      error: (err) => {
-        console.error('Error al vender auto:', err);
-        this.showMessageModal('Error al vender el auto.');
-      },
+      error: () => this.showMessageModal('Error al vender el auto.'),
     });
-  }
-
-  confirmarEliminar() {
-    if (this.autoIdToDelete) {
-      this.autosService.eliminarAuto(this.autoIdToDelete).subscribe({
-        next: () => {
-          this.showMessageModal(
-            `Auto con ID ${this.autoIdToDelete} eliminado del sistema.`
-          );
-          this.cargarAutos();
-          this.autoIdToDelete = null;
-        },
-        error: (err) => {
-          console.error('Error al eliminar auto:', err);
-          this.showMessageModal('Error al eliminar el auto.');
-        },
-      });
-    }
   }
 
   eliminarAuto(id: string) {
     this.autoIdToDelete = id;
-    this.showConfirmModal();
+    new bootstrap.Modal(document.getElementById('confirmModal')).show();
   }
 
-  alternarVista() {
-    this.mostrandoVendidos = !this.mostrandoVendidos;
-    this.cargarAutos();
+  confirmarEliminar() {
+    if (!this.autoIdToDelete) return;
+
+    this.autosService.eliminarAuto(this.autoIdToDelete).subscribe({
+      next: () => {
+        this.showMessageModal('Auto eliminado con éxito.');
+        this.cargarAutos();
+      },
+      error: () => this.showMessageModal('Error al eliminar auto.'),
+    });
   }
 
-  private showMessageModal(message: string): void {
+  private showMessageModal(message: string) {
     this.messageModalText = message;
-    console.log(`[Message Modal] ${message}`);
-  }
-
-  private showConfirmModal(): void {
-    console.log(
-      `[Confirm Modal] Solicitud de eliminación para ${this.autoIdToDelete}`
-    );
+    new bootstrap.Modal(document.getElementById('messageModal')).show();
   }
 }
