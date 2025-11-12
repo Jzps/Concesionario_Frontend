@@ -10,14 +10,10 @@ export interface LoginRequest {
 
 export interface User {
   id: string;
+  username: string;
   email?: string;
   nombre?: string;
-  username: string;
-  telefono?: string;
-  activo?: boolean;
   es_admin?: boolean;
-  fecha_creacion?: string;
-  fecha_edicion?: string;
 }
 
 export interface LoginResponse {
@@ -26,14 +22,10 @@ export interface LoginResponse {
   user?: User;
 }
 
-export type UserRole = 'admin' | 'consumidor';
-
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly TOKEN_KEY = 'auth_token';
   private readonly USER_KEY = 'user_data';
-  private readonly ROLE_KEY = 'user_role';
-
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
@@ -48,36 +40,30 @@ export class AuthService {
 
     return this.apiService.post<any>('/admin/login', null, params).pipe(
       tap((response) => {
-        const userData: User = {
-          id: 'temp',
+        console.log('Login response:', response);
+        const user: User = {
+          id: response.user?.id ?? 'temp_id',
           username: credentials.username,
           es_admin: true,
         };
         this.setUserData({
-          token: 'token_' + Date.now(),
-          user: userData,
+          token: response.token ?? 'token_' + Date.now(),
+          user,
         });
       })
     );
   }
 
-  register(data: {
-    username: string;
-    password: string;
-    nombre?: string;
-    email?: string;
-  }): Observable<any> {
-    return this.apiService.post('/admin/', data);
-  }
-
-  verificarEstado(): Observable<any> {
-    return this.apiService.get('/admin/');
+  register(data: { username: string; password: string }): Observable<any> {
+    return this.apiService.post('/admin/', {
+      username: data.username,
+      password: data.password,
+    });
   }
 
   logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
-    localStorage.removeItem(this.ROLE_KEY);
     this.currentUserSubject.next(null);
   }
 
@@ -93,13 +79,9 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  setUserData(data: LoginResponse): void {
-    localStorage.setItem(this.TOKEN_KEY, data.token ?? 'mock_token');
+  private setUserData(data: LoginResponse): void {
+    localStorage.setItem(this.TOKEN_KEY, data.token ?? '');
     localStorage.setItem(this.USER_KEY, JSON.stringify(data.user ?? {}));
-    localStorage.setItem(
-      this.ROLE_KEY,
-      data.user?.es_admin ? 'admin' : 'consumidor'
-    );
     this.currentUserSubject.next(data.user ?? null);
   }
 
@@ -113,22 +95,5 @@ export class AuthService {
         this.logout();
       }
     }
-  }
-
-  getUserRole(): UserRole | null {
-    const user = this.getCurrentUser();
-    return user?.es_admin ? 'admin' : 'consumidor';
-  }
-
-  canAccess(route: string): boolean {
-    const role = this.getUserRole();
-    if (!role) return false;
-
-    if (role === 'admin') return true;
-    if (role === 'consumidor') {
-      return ['productos', 'dashboard'].includes(route);
-    }
-
-    return false;
   }
 }

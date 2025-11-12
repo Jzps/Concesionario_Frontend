@@ -1,8 +1,8 @@
 import { inject } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
-export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
+export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
@@ -10,12 +10,5 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
     router.navigate(['/auth/login']);
     return false;
   }
-
-  const targetRoute = route.routeConfig?.path || '';
-  if (!authService.canAccess(targetRoute)) {
-    router.navigate(['/dashboard']);
-    return false;
-  }
-
   return true;
 };

@@ -5,144 +5,145 @@
         <div class="login-icon">
           <i class="now-ui-icons ui-1_lock-circle-open"></i>
         </div>
-        <h2 class="card-title text-title-contrast">Iniciar Sesión</h2>
-        <p class="login-subtitle text-high-contrast">
-          Accede a tu cuenta para continuar
-        </p>
+        <h2 class="card-title">Iniciar Sesión</h2>
+        <p class="login-subtitle">Accede a tu cuenta de administrador</p>
       </div>
 
       <div class="card-body">
         <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="login-form">
           <div class="form-group">
-            <label for="email" class="form-label">
-              <span class="label-icon">
-                <i class="now-ui-icons users_single-02"></i>
-              </span>
-              Usuario
-            </label>
+            <label for="username" class="form-label">Usuario</label>
             <input
               type="text"
-              id="email"
+              id="username"
               class="form-control"
-              [(ngModel)]="loginData.username"
               name="username"
+              [(ngModel)]="loginData.username"
               required
-              placeholder="admin"
-              #email="ngModel"
-              [class.is-invalid]="email.invalid && email.touched"
+              placeholder="Ingresa tu usuario"
             />
-            <div
-              class="invalid-feedback"
-              *ngIf="email.invalid && email.touched"
-            >
-              <div *ngIf="email.errors?.['required']">
-                El usuario es requerido
-              </div>
-            </div>
           </div>
 
           <div class="form-group">
-            <label for="password" class="form-label">
-              <span class="label-icon">
-                <i class="now-ui-icons ui-1_lock-circle-open"></i>
-              </span>
-              Contraseña
-            </label>
+            <label for="password" class="form-label">Contraseña</label>
             <input
               type="password"
               id="password"
               class="form-control"
-              [(ngModel)]="loginData.password"
               name="password"
+              [(ngModel)]="loginData.password"
               required
-              minlength="6"
-              placeholder="admin123"
-              #password="ngModel"
-              [class.is-invalid]="password.invalid && password.touched"
+              placeholder="Ingresa tu contraseña"
             />
-            <div
-              class="invalid-feedback"
-              *ngIf="password.invalid && password.touched"
-            >
-              <div *ngIf="password.errors?.['required']">
-                La contraseña es requerida
-              </div>
-              <div *ngIf="password.errors?.['minlength']">
-                La contraseña debe tener al menos 6 caracteres
-              </div>
-            </div>
           </div>
 
           <div class="form-group">
             <button
               type="submit"
               class="btn btn-primary w-100 btn-lg"
-              [disabled]="loginForm.invalid || loading"
-              [class.loading]="loading"
+              [disabled]="loading"
             >
               <span *ngIf="loading" class="spinner"></span>
-              <span *ngIf="loading">Iniciando sesión...</span>
-              <span *ngIf="!loading">
-                <span class="btn-icon">
-                  <i class="now-ui-icons arrows-1_cloud-upload-94"></i>
-                </span>
-                Iniciar Sesión
-              </span>
+              <span *ngIf="!loading">Iniciar Sesión</span>
             </button>
           </div>
 
-          <!-- Credenciales de prueba -->
-          <div class="demo-credentials">
-            <div class="demo-header">
-              <span class="demo-icon">
-                <i class="now-ui-icons objects_support-17"></i>
-              </span>
-              <strong>Credenciales de Prueba</strong>
-            </div>
-            <div class="demo-info">
-              <div class="credential-group">
-                <h4>
-                  <i class="now-ui-icons users_single-02"></i>
-                  Administrador
-                </h4>
-                <p><strong>Usuario:</strong> admin</p>
-                <p><strong>Contraseña:</strong> admin123</p>
-                <p class="role-info">
-                  Acceso completo a todas las funcionalidades
-                </p>
-              </div>
-              <div class="credential-group">
-                <h4>
-                  <i class="now-ui-icons shopping_bag-16"></i>
-                  Consumidor
-                </h4>
-                <p><strong>Usuario:</strong> consumidor</p>
-                <p><strong>Contraseña:</strong> consumidor123</p>
-                <p class="role-info">Solo puede ver productos</p>
-              </div>
-            </div>
+          <div class="text-center mt-3">
+            <button
+              type="button"
+              class="btn btn-link text-primary"
+              (click)="openRegisterModal()"
+            >
+              ¿No tienes cuenta? Regístrate aquí
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="errorModal"
+  tabindex="-1"
+  aria-labelledby="errorModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="errorModalLabel">
+          Error de inicio de sesión
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">{{ modalMessage }}</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="registerModal"
+  tabindex="-1"
+  aria-labelledby="registerModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="registerModalLabel">
+          Registrar nuevo administrador
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form #registerForm="ngForm" (ngSubmit)="onRegisterSubmit()">
+          <div class="mb-3">
+            <label class="form-label">Usuario</label>
+            <input
+              [(ngModel)]="registerData.username"
+              name="username"
+              class="form-control"
+              required
+              placeholder="Nombre de usuario"
+            />
           </div>
 
-          <div class="form-options">
-            <div class="text-center">
-              <a routerLink="/auth/forgot-password" class="link">
-                <span class="link-icon">
-                  <i class="now-ui-icons ui-1_lock-circle-open"></i>
-                </span>
-                ¿Olvidaste tu contraseña?
-              </a>
-            </div>
-
-            <div class="text-center">
-              <span class="register-text">¿No tienes cuenta? </span>
-              <a routerLink="/auth/register" class="link">
-                <span class="link-icon">
-                  <i class="now-ui-icons ui-1_simple-add"></i>
-                </span>
-                Regístrate aquí
-              </a>
-            </div>
+          <div class="mb-3">
+            <label class="form-label">Contraseña</label>
+            <input
+              [(ngModel)]="registerData.password"
+              name="password"
+              type="password"
+              class="form-control"
+              required
+              placeholder="Contraseña"
+            />
           </div>
+
+          <button
+            type="submit"
+            class="btn btn-success w-100"
+            [disabled]="loading"
+          >
+            <span *ngIf="loading">Registrando...</span>
+            <span *ngIf="!loading">Registrar</span>
+          </button>
         </form>
       </div>
     </div>

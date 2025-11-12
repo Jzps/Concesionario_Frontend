@@ -1,99 +1,21 @@
-:host ::ng-deep {
-  $header-bg: #ffffff;
-  $primary-blue: #4c63ff;
-  $header-shadow: rgba(0, 0, 0, 0.1);
-  $text-muted: #6c757d;
+.c-header {
+  background-color: #fff;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0.5rem 1rem;
 
-  .header-concesionario {
-    background-color: $header-bg;
-    border-bottom: 1px solid #dee2e6;
-    box-shadow: 0 2px 8px $header-shadow;
-    padding: 0.75rem 1.5rem;
-    z-index: 1030;
-
-    .header-logo-icon {
-      font-size: 1.6rem;
-      color: $primary-blue;
-    }
-
-    .header-title {
-      color: #343a40;
-      letter-spacing: 0.5px;
-      font-weight: 700;
-    }
-
-    .badge {
-      font-weight: 600;
-      font-size: 0.8rem;
-      background-color: rgba($primary-blue, 0.1);
-      color: $primary-blue;
-      border: 1px solid rgba($primary-blue, 0.2);
-    }
+  .fw-semibold {
+    font-size: 0.95rem;
   }
 
-  button[cbutton][variant="ghost"],
-  .btn-light {
-    color: #495057 !important;
-    border-radius: 50%;
-    transition: all 0.25s ease;
-
-    &:hover {
-      background-color: rgba($primary-blue, 0.1);
-      color: $primary-blue !important;
-    }
-  }
-
-  .dropdown-toggle {
-    border-radius: 10px;
-    transition: all 0.3s ease;
-
-    &:hover {
-      background-color: rgba($primary-blue, 0.05);
-    }
-
-    .avatar-container {
-      background-color: $primary-blue;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 42px;
-      height: 42px;
-      color: white;
-      border-radius: 50%;
-    }
+  .text-muted {
+    font-size: 0.8rem;
   }
 
   .dropdown-menu {
-    border-radius: 10px !important;
-    overflow: hidden;
     font-size: 0.9rem;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e9ecef;
-
-    .dropdown-header {
-      background-color: rgba($primary-blue, 0.05);
-      font-weight: 600;
-      color: #495057;
-    }
-
-    .dropdown-item {
-      transition: background-color 0.2s ease;
-
-      &:hover {
-        background-color: rgba($primary-blue, 0.08);
-        color: $primary-blue;
-      }
-
-      i {
-        color: $primary-blue;
-      }
-    }
   }
 
-  app-breadcrumbs {
-    padding-top: 0.5rem;
-    display: block;
-    color: $text-muted;
-    font-size: 0.9rem;
+  .dropdown-item.text-danger:hover {
+    background-color: #f8d7da;
   }
 }
