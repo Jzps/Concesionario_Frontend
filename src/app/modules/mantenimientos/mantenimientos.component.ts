@@ -26,12 +26,18 @@ import {
   styleUrls: ['../clientes/clientes.component.scss'],
 })
 export class MantenimientosComponent implements OnInit {
+  // Filtro de búsqueda
   filtro = '';
+  // Formulario reactivo para crear o editar mantenimientos
   mantenimientoForm!: FormGroup;
+  // Texto del mensaje del modal
   messageModalText: string = '';
+  // ID del mantenimiento a eliminar
   mantenimientoIdToDelete: string | null = null;
 
+  // Listado general de mantenimientos
   mantenimientos: Mantenimiento[] = [];
+  // Lista filtrada de mantenimientos
   filteredMantenimientos: Mantenimiento[] = [];
 
   constructor(
@@ -39,6 +45,7 @@ export class MantenimientosComponent implements OnInit {
     private mantenimientoService: MantenimientoService
   ) {}
 
+  // Inicializa el formulario y carga los mantenimientos
   ngOnInit(): void {
     this.mantenimientoForm = this.fb.group({
       auto_id: ['', Validators.required],
@@ -52,6 +59,7 @@ export class MantenimientosComponent implements OnInit {
     this.cargarMantenimientos();
   }
 
+  // Carga la lista de mantenimientos desde el servicio
   cargarMantenimientos(): void {
     this.mantenimientoService.listarMantenimientos().subscribe({
       next: (data) => {
@@ -64,6 +72,7 @@ export class MantenimientosComponent implements OnInit {
     });
   }
 
+  // Filtra los mantenimientos según el texto ingresado
   filtrarMantenimientos(): void {
     const term = this.filtro.toLowerCase().trim();
 
@@ -77,6 +86,7 @@ export class MantenimientosComponent implements OnInit {
       : [...this.mantenimientos];
   }
 
+  // Limpia el formulario para crear un nuevo mantenimiento
   crearMantenimiento(): void {
     this.mantenimientoForm.reset({
       fecha: new Date().toISOString().split('T')[0],
@@ -84,6 +94,7 @@ export class MantenimientosComponent implements OnInit {
     });
   }
 
+  // Guarda un mantenimiento nuevo a través del servicio
   guardarMantenimiento(): void {
     if (this.mantenimientoForm.invalid) {
       this.mantenimientoForm.markAllAsTouched();
@@ -116,6 +127,7 @@ export class MantenimientosComponent implements OnInit {
     });
   }
 
+  // Abre un modal de confirmación antes de eliminar un mantenimiento
   pedirConfirmacion(id: string): void {
     this.mantenimientoIdToDelete = id;
     const modal = document.getElementById('confirmModal');
@@ -124,6 +136,7 @@ export class MantenimientosComponent implements OnInit {
     }
   }
 
+  // Confirma la eliminación del mantenimiento seleccionado
   confirmarEliminar(): void {
     if (!this.mantenimientoIdToDelete) return;
 
@@ -142,6 +155,7 @@ export class MantenimientosComponent implements OnInit {
     this.mantenimientoIdToDelete = null;
   }
 
+  // Muestra un modal con un mensaje determinado
   private showMessageModal(message: string): void {
     this.messageModalText = message;
     const modal = document.getElementById('messageModal');

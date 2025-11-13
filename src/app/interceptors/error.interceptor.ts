@@ -4,6 +4,7 @@ import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { NotificationService } from '../services/notification.service';
 
+// Interceptor para manejar errores globales de las peticiones HTTP
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const notificationService = inject<NotificationService>(NotificationService);
@@ -12,9 +13,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       let errorMessage = 'Ha ocurrido un error inesperado';
 
+      // Errores del lado del cliente
       if (error.error instanceof ErrorEvent) {
         errorMessage = `Error: ${error.error.message}`;
       } else {
+        // Errores del lado del servidor
         switch (error.status) {
           case 400:
             errorMessage = 'Solicitud incorrecta';
@@ -40,6 +43,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }
 
+      // Mostrar notificación con el mensaje de error
       notificationService.showError(errorMessage);
 
       return throwError(() => error);
