@@ -11,6 +11,10 @@ import { Cliente, ClientesService } from '../../services/clientes.service';
 
 declare var bootstrap: any;
 
+/**
+ * Componente encargado de la gestión de clientes.
+ * Permite crear, editar, eliminar y filtrar clientes registrados.
+ */
 @Component({
   selector: 'app-clientes',
   standalone: true,
@@ -19,15 +23,21 @@ declare var bootstrap: any;
   styleUrls: ['./clientes.component.scss'],
 })
 export class ClientesComponent implements OnInit {
+  /** Texto del filtro de búsqueda */
   filtro = '';
+  /** Formulario reactivo para creación y edición de clientes */
   clienteForm!: FormGroup;
+  /** Texto del mensaje mostrado en los modales */
   messageModalText = '';
+  /** ID del cliente que será eliminado */
   clienteIdToDelete: string | null = null;
-
+  /** Lista total de clientes */
   clientes: Cliente[] = [];
+  /** Lista filtrada de clientes mostrados en la tabla */
   filteredClientes: Cliente[] = [];
-
+  /** Indica si se está en modo edición */
   modoEdicion = false;
+  /** ID del cliente actualmente en edición */
   clienteEditandoId: string | null = null;
 
   constructor(
@@ -35,6 +45,9 @@ export class ClientesComponent implements OnInit {
     private clientesService: ClientesService
   ) {}
 
+  /**
+   * Inicializa el formulario y carga la lista de clientes al iniciar el componente.
+   */
   ngOnInit(): void {
     this.clienteForm = this.fb.group({
       nombre: ['', Validators.required],
@@ -48,6 +61,10 @@ export class ClientesComponent implements OnInit {
     this.cargarClientes();
   }
 
+  /**
+   * Obtiene la lista completa de clientes desde el servicio.
+   * Actualiza la lista filtrada para mostrar los datos.
+   */
   cargarClientes() {
     this.clientesService.listarClientes().subscribe({
       next: (data) => {
@@ -60,6 +77,9 @@ export class ClientesComponent implements OnInit {
     });
   }
 
+  /**
+   * Filtra la lista de clientes según el término de búsqueda.
+   */
   filtrarClientes() {
     const term = this.filtro.toLowerCase();
     this.filteredClientes = this.clientes.filter(
@@ -71,6 +91,10 @@ export class ClientesComponent implements OnInit {
     );
   }
 
+  /**
+   * Abre el modal para crear un nuevo cliente.
+   * Reinicia el formulario y cambia el modo a creación.
+   */
   crearCliente() {
     this.modoEdicion = false;
     this.clienteForm.reset();
@@ -79,6 +103,9 @@ export class ClientesComponent implements OnInit {
     modal.show();
   }
 
+  /**
+   * Guarda un nuevo cliente o actualiza uno existente según el modo actual.
+   */
   guardarCliente() {
     if (!this.clienteForm.valid) {
       this.clienteForm.markAllAsTouched();
@@ -121,11 +148,14 @@ export class ClientesComponent implements OnInit {
     });
   }
 
+  /**
+   * Carga los datos de un cliente existente para editarlo.
+   * @param id ID del cliente a editar.
+   */
   editarCliente(id: string) {
     this.modoEdicion = true;
     this.clienteEditandoId = id;
 
-    // traemos el cliente completo
     this.clientesService.obtenerClientePorId(id).subscribe({
       next: (cliente) => {
         this.clienteForm.patchValue(cliente);
@@ -139,6 +169,10 @@ export class ClientesComponent implements OnInit {
     });
   }
 
+  /**
+   * Abre el modal de confirmación para eliminar un cliente.
+   * @param id ID del cliente a eliminar.
+   */
   eliminarCliente(id: string) {
     this.clienteIdToDelete = id;
 
@@ -146,6 +180,9 @@ export class ClientesComponent implements OnInit {
     modal.show();
   }
 
+  /**
+   * Confirma la eliminación del cliente seleccionado y actualiza la lista.
+   */
   confirmarEliminar() {
     if (!this.clienteIdToDelete) return;
 
@@ -160,6 +197,10 @@ export class ClientesComponent implements OnInit {
     });
   }
 
+  /**
+   * Muestra un modal con un mensaje informativo.
+   * @param message Texto del mensaje a mostrar.
+   */
   showMessageModal(message: string) {
     this.messageModalText = message;
     const modal = new bootstrap.Modal(document.getElementById('messageModal'));

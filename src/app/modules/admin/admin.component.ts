@@ -11,6 +11,10 @@ import { Admin, AdminService } from '../../services/admin.service';
 
 declare var bootstrap: any;
 
+/**
+ * Componente que gestiona los administradores del sistema.
+ * Permite crear, listar, filtrar y eliminar administradores.
+ */
 @Component({
   selector: 'app-admin',
   standalone: true,
@@ -29,6 +33,9 @@ export class AdminComponent implements OnInit {
 
   constructor(private fb: FormBuilder, private adminService: AdminService) {}
 
+  /**
+   * Inicializa el formulario de administradores y carga la lista inicial.
+   */
   ngOnInit(): void {
     this.adminForm = this.fb.group({
       username: ['', [Validators.required, Validators.minLength(4)]],
@@ -38,6 +45,9 @@ export class AdminComponent implements OnInit {
     this.cargarAdmins();
   }
 
+  /**
+   * Obtiene la lista de administradores desde el servicio.
+   */
   cargarAdmins(): void {
     this.adminService.listarAdmins().subscribe({
       next: (data) => {
@@ -48,6 +58,9 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  /**
+   * Filtra la lista de administradores según el término ingresado.
+   */
   filtrarAdmins(): void {
     const term = this.filtro.toLowerCase().trim();
     this.filteredAdmins = term
@@ -59,12 +72,19 @@ export class AdminComponent implements OnInit {
       : [...this.admins];
   }
 
+  /**
+   * Abre el modal para crear un nuevo administrador.
+   */
   crearAdmin() {
     this.adminForm.reset();
     const modal = document.getElementById('adminModal');
     if (modal) new bootstrap.Modal(modal).show();
   }
 
+  /**
+   * Guarda un nuevo administrador mediante el servicio.
+   * Valida el formulario antes de enviarlo.
+   */
   guardarAdmin() {
     if (this.adminForm.invalid) {
       this.adminForm.markAllAsTouched();
@@ -88,12 +108,19 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  /**
+   * Abre el modal de confirmación para eliminar un administrador.
+   * @param id ID del administrador a eliminar.
+   */
   eliminarAdmin(id: string) {
     this.adminIdToDelete = id;
     const modal = document.getElementById('confirmModal');
     if (modal) new bootstrap.Modal(modal).show();
   }
 
+  /**
+   * Confirma la eliminación del administrador seleccionado.
+   */
   confirmarEliminar() {
     if (!this.adminIdToDelete) return;
 
@@ -107,6 +134,10 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  /**
+   * Muestra un modal con un mensaje informativo.
+   * @param message Texto a mostrar en el modal.
+   */
   private showMessageModal(message: string): void {
     this.messageModalText = message;
     const modal = document.getElementById('messageModal');

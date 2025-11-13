@@ -1,6 +1,15 @@
+/**
+ * Configuración de las rutas principales de la aplicación Angular.
+ * Incluye módulos protegidos por el authGuard y rutas públicas.
+ */
+
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 
+/**
+ * Rutas globales de la aplicación.
+ * Define rutas cargadas de forma diferida (lazy loading) y componentes protegidos por el guard.
+ */
 export const routes: Routes = [
   {
     path: 'auth',

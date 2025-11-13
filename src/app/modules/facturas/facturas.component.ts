@@ -25,6 +25,7 @@ declare var bootstrap: any;
   styleUrls: ['../clientes/clientes.component.scss'],
 })
 export class FacturasComponent implements OnInit {
+  /** Componente encargado de la gestión de facturas. Permite listar, crear, filtrar y eliminar facturas. */
   filtro = '';
   facturaForm!: FormGroup;
   messageModalText: string = '';
@@ -38,6 +39,7 @@ export class FacturasComponent implements OnInit {
     private facturaService: FacturaService
   ) {}
 
+  /** Inicializa el formulario de facturas, configura validaciones y carga la lista de facturas. */
   ngOnInit(): void {
     this.facturaForm = this.fb.group({
       fecha_emision: [
@@ -58,6 +60,7 @@ export class FacturasComponent implements OnInit {
     this.cargarFacturas();
   }
 
+  /** Obtiene la lista de facturas desde el servicio y las almacena localmente. */
   cargarFacturas(): void {
     this.facturaService.listarFacturas().subscribe({
       next: (data) => {
@@ -72,6 +75,7 @@ export class FacturasComponent implements OnInit {
     });
   }
 
+  /** Filtra las facturas según el término de búsqueda ingresado. */
   filtrarFacturas(): void {
     const term = this.filtro.toLowerCase().trim();
     if (!term) {
@@ -85,6 +89,7 @@ export class FacturasComponent implements OnInit {
     );
   }
 
+  /** Limpia el formulario para registrar una nueva factura. */
   crearFactura(): void {
     this.facturaForm.reset({
       fecha_emision: new Date().toISOString().split('T')[0],
@@ -99,6 +104,7 @@ export class FacturasComponent implements OnInit {
     });
   }
 
+  /** Guarda una nueva factura o muestra errores si el formulario es inválido; envía los datos al servicio. */
   guardarFactura(): void {
     if (this.facturaForm.invalid) {
       this.facturaForm.markAllAsTouched();
@@ -130,7 +136,6 @@ export class FacturasComponent implements OnInit {
         console.log('Factura creada:', facturaCreada);
         this.showMessageModal('Factura creada exitosamente.');
         this.cargarFacturas();
-        // cerrar modal si está abierto
         bootstrap.Modal.getInstance(
           document.getElementById('facturaModal')
         )?.hide();
@@ -158,6 +163,7 @@ export class FacturasComponent implements OnInit {
     });
   }
 
+  /** Calcula el total de la factura en base al precio, mantenimiento y descuento. */
   calcularTotal(): void {
     const raw = this.facturaForm.getRawValue();
     const precio = Number(raw.precio_carro_base) || 0;
@@ -170,11 +176,13 @@ export class FacturasComponent implements OnInit {
     );
   }
 
+  /** Abre el modal de confirmación para eliminar una factura. */
   eliminarFactura(id: string): void {
     this.facturaIdToDelete = id;
     new bootstrap.Modal(document.getElementById('confirmModal')).show();
   }
 
+  /** Confirma la eliminación de una factura seleccionada. */
   confirmarEliminar(): void {
     if (!this.facturaIdToDelete) return;
 
@@ -193,6 +201,7 @@ export class FacturasComponent implements OnInit {
     });
   }
 
+  /** Muestra un modal con el mensaje recibido como parámetro. */
   private showMessageModal(message: string): void {
     this.messageModalText = message;
     new bootstrap.Modal(document.getElementById('messageModal')).show();
