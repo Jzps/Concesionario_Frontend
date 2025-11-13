@@ -13,6 +13,7 @@ import { NotificationService } from '../../../services/notification.service';
   styleUrls: ['./register.component.scss'],
 })
 export class RegisterComponent {
+  // Datos del formulario de registro
   registerData = {
     username: '',
     password: '',
@@ -25,6 +26,7 @@ export class RegisterComponent {
     private router: Router
   ) {}
 
+  // Registra un nuevo administrador y redirige al login
   onSubmit(): void {
     if (this.loading) return;
     this.loading = true;

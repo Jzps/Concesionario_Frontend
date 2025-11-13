@@ -34,6 +34,9 @@ export class EmpleadosComponent implements OnInit {
     private empleadosService: EmpleadosService
   ) {}
 
+  /**
+   * Inicializa el formulario y carga la lista de empleados.
+   */
   ngOnInit(): void {
     this.empleadoForm = this.fb.group({
       nombre: ['', Validators.required],
@@ -50,6 +53,9 @@ export class EmpleadosComponent implements OnInit {
     this.cargarEmpleados();
   }
 
+  /**
+   * Obtiene todos los empleados desde el servicio.
+   */
   cargarEmpleados() {
     this.empleadosService.listarEmpleados().subscribe({
       next: (data) => (this.empleados = data),
@@ -57,6 +63,9 @@ export class EmpleadosComponent implements OnInit {
     });
   }
 
+  /**
+   * Filtra los empleados según el texto de búsqueda.
+   */
   get empleadosMostrados() {
     const t = this.filtro.toLowerCase();
     return this.empleados.filter(
@@ -67,6 +76,10 @@ export class EmpleadosComponent implements OnInit {
     );
   }
 
+  /**
+   * Cambia la vista entre todos, vendedores o técnicos.
+   * @param vista Tipo de vista seleccionada.
+   */
   cambiarVista(vista: 'TODOS' | 'VENDEDORES' | 'TECNICOS') {
     this.vistaActual = vista;
 
@@ -89,12 +102,18 @@ export class EmpleadosComponent implements OnInit {
     }
   }
 
+  /**
+   * Prepara el formulario para registrar un nuevo empleado.
+   */
   nuevoEmpleado() {
     this.modalTitle = 'Registrar Empleado';
     this.empleadoForm.reset();
     this.empleadoIdSeleccionado = null;
   }
 
+  /**
+   * Guarda los datos del empleado nuevo o actualizado.
+   */
   guardarEmpleado() {
     if (this.empleadoForm.invalid) return;
 
@@ -121,6 +140,10 @@ export class EmpleadosComponent implements OnInit {
     }
   }
 
+  /**
+   * Carga los datos de un empleado para su edición.
+   * @param id ID del empleado a editar.
+   */
   editarEmpleado(id: string) {
     this.empleadosService.obtenerEmpleadoPorId(id).subscribe({
       next: (empleado) => {
@@ -133,11 +156,18 @@ export class EmpleadosComponent implements OnInit {
     });
   }
 
+  /**
+   * Abre el modal para asignar un rol al empleado.
+   * @param id ID del empleado seleccionado.
+   */
   abrirAsignarRolModal(id: string) {
     this.empleadoIdSeleccionado = id;
     this.showModal('rolModal');
   }
 
+  /**
+   * Asigna el rol de vendedor al empleado seleccionado.
+   */
   asignarVendedor() {
     if (!this.empleadoIdSeleccionado) return;
     const data: Vendedor = { empleado_id: this.empleadoIdSeleccionado };
@@ -151,6 +181,9 @@ export class EmpleadosComponent implements OnInit {
     });
   }
 
+  /**
+   * Asigna el rol de técnico al empleado seleccionado.
+   */
   asignarTecnico() {
     if (!this.empleadoIdSeleccionado) return;
     const data: Tecnico = { empleado_id: this.empleadoIdSeleccionado };
@@ -166,11 +199,18 @@ export class EmpleadosComponent implements OnInit {
 
   empleadoAEliminar: string | null = null;
 
+  /**
+   * Abre el modal de confirmación antes de eliminar un empleado.
+   * @param id ID del empleado a eliminar.
+   */
   pedirConfirmacion(id: string) {
     this.empleadoAEliminar = id;
     this.showModal('confirmModal');
   }
 
+  /**
+   * Confirma la eliminación del empleado seleccionado.
+   */
   confirmarEliminar() {
     if (!this.empleadoAEliminar) return;
     this.empleadosService.eliminarEmpleado(this.empleadoAEliminar).subscribe({
@@ -182,6 +222,10 @@ export class EmpleadosComponent implements OnInit {
     });
   }
 
+  /**
+   * Muestra un modal en pantalla.
+   * @param id ID del modal a mostrar.
+   */
   private showModal(id: string) {
     const el = document.getElementById(id);
     if (el) {
@@ -189,6 +233,10 @@ export class EmpleadosComponent implements OnInit {
     }
   }
 
+  /**
+   * Muestra un modal con un mensaje de alerta.
+   * @param msg Texto a mostrar en el modal.
+   */
   private showMessageModal(msg: string) {
     this.messageModalText = msg;
     const el = document.getElementById('messageModal');

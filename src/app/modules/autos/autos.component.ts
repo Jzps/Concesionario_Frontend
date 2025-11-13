@@ -11,6 +11,10 @@ import { Auto, AutosService } from '../../services/autos.service';
 
 declare var bootstrap: any;
 
+/**
+ * Componente encargado de gestionar el módulo de autos.
+ * Permite listar, crear, editar, vender y eliminar autos.
+ */
 @Component({
   selector: 'app-autos',
   standalone: true,
@@ -19,18 +23,27 @@ declare var bootstrap: any;
   styleUrls: ['./autos.component.scss'],
 })
 export class AutosComponent implements OnInit {
+  /** Texto del filtro de búsqueda */
   filtro = '';
+  /** Indica si se están mostrando autos vendidos */
   mostrandoVendidos = false;
+  /** Formulario reactivo de autos */
   autoForm!: FormGroup;
+  /** Texto mostrado en el modal de mensajes */
   messageModalText: string = '';
+  /** ID del auto que se va a eliminar */
   autoIdToDelete: string | null = null;
-
+  /** ID del auto actualmente en edición */
   autoEditandoId: string | null = null;
-
+  /** Lista de autos obtenidos del servicio */
   autos: Auto[] = [];
 
   constructor(private fb: FormBuilder, private autosService: AutosService) {}
 
+  /**
+   * Inicializa el componente y configura el formulario.
+   * Carga la lista inicial de autos desde el servicio.
+   */
   ngOnInit(): void {
     this.autoForm = this.fb.group({
       tipo: ['', Validators.required],
@@ -44,17 +57,20 @@ export class AutosComponent implements OnInit {
     this.cargarAutos();
   }
 
+  /** Obtiene los autos filtrados según el estado actual (vendidos o disponibles). */
   get autosMostrados(): Auto[] {
     return this.autos.filter(
       (a) => a.estado === (this.mostrandoVendidos ? 'VENDIDO' : 'DISPONIBLE')
     );
   }
 
+  /** Alterna entre la vista de autos vendidos y disponibles. */
   alternarVista() {
     this.mostrandoVendidos = !this.mostrandoVendidos;
     this.cargarAutos();
   }
 
+  /** Carga los autos desde el servicio, dependiendo del estado seleccionado. */
   cargarAutos() {
     const request = this.mostrandoVendidos
       ? this.autosService.listarAutosVendidos()
@@ -85,11 +101,16 @@ export class AutosComponent implements OnInit {
     });
   }
 
+  /** Limpia el formulario para crear un nuevo auto. */
   crearAuto() {
     this.autoEditandoId = null;
     this.autoForm.reset();
   }
 
+  /**
+   * Carga los datos de un auto existente en el formulario para su edición.
+   * @param auto Objeto del auto a editar.
+   */
   editarAuto(auto: Auto) {
     this.autoEditandoId = auto.id ?? null;
 
@@ -103,6 +124,7 @@ export class AutosComponent implements OnInit {
     });
   }
 
+  /** Guarda un auto nuevo o actualiza uno existente. */
   guardarAuto() {
     if (!this.autoForm.valid) return;
 
@@ -139,6 +161,10 @@ export class AutosComponent implements OnInit {
     }
   }
 
+  /**
+   * Marca un auto como vendido.
+   * @param id ID del auto a vender.
+   */
   venderAuto(id: string) {
     this.autosService.venderAuto(id).subscribe({
       next: () => {
@@ -149,11 +175,16 @@ export class AutosComponent implements OnInit {
     });
   }
 
+  /**
+   * Abre el modal de confirmación para eliminar un auto.
+   * @param id ID del auto a eliminar.
+   */
   eliminarAuto(id: string) {
     this.autoIdToDelete = id;
     new bootstrap.Modal(document.getElementById('confirmModal')).show();
   }
 
+  /** Confirma y elimina el auto seleccionado. */
   confirmarEliminar() {
     if (!this.autoIdToDelete) return;
 
@@ -166,6 +197,10 @@ export class AutosComponent implements OnInit {
     });
   }
 
+  /**
+   * Muestra un modal con un mensaje informativo.
+   * @param message Texto a mostrar en el modal.
+   */
   private showMessageModal(message: string) {
     this.messageModalText = message;
     new bootstrap.Modal(document.getElementById('messageModal')).show();

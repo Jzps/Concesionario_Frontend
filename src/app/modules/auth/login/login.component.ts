@@ -15,7 +15,9 @@ declare var bootstrap: any;
   styleUrls: ['./login.component.scss'],
 })
 export class LoginComponent implements OnInit {
+  // Datos para el formulario de inicio de sesión
   loginData: LoginRequest = { username: '', password: '' };
+  // Datos para el formulario de registro
   registerData = { username: '', password: '' };
   loading = false;
   modalMessage = '';
@@ -28,6 +30,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {}
 
+  // Inicia sesión con los datos ingresados
   onSubmit(): void {
     if (this.loading) return;
     this.loading = true;
@@ -45,20 +48,21 @@ export class LoginComponent implements OnInit {
         console.error('Error en login:', error);
         this.loading = false;
 
+        // Mostrar mensajes específicos según el tipo de error
         if (error.status === 404 || error.status === 422) {
           this.modalMessage = 'Usuario o contraseña incorrecta.';
-          this.openModal('errorModal');
         } else if (error.status === 0) {
           this.modalMessage = 'No se puede conectar al servidor.';
-          this.openModal('errorModal');
         } else {
           this.modalMessage = 'Error inesperado. Intenta nuevamente.';
-          this.openModal('errorModal');
         }
+
+        this.openModal('errorModal');
       },
     });
   }
 
+  // Abre un modal de Bootstrap por ID
   openModal(id: string): void {
     const modalElement = document.getElementById(id);
     if (modalElement) {
@@ -67,10 +71,12 @@ export class LoginComponent implements OnInit {
     }
   }
 
+  // Abre el modal de registro
   openRegisterModal(): void {
     this.openModal('registerModal');
   }
 
+  // Envía los datos del formulario de registro
   onRegisterSubmit(): void {
     if (this.loading) return;
     this.loading = true;
@@ -85,6 +91,7 @@ export class LoginComponent implements OnInit {
           'Administrador registrado con éxito'
         );
 
+        // Cierra el modal de registro
         const modalEl = document.getElementById('registerModal');
         if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
       },
